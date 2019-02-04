@@ -1,0 +1,17 @@
+root = true
+
+# common file standards, unix based
+[*]
+end_of_line = lf
+
+
+# but ignore dependencies
+[/node_modules/**]
+end_of_line = none
+
+# 4 space indentation for javascript and json, other file types are marginal and I do not care about their indentation
+[*.js, *.json]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true

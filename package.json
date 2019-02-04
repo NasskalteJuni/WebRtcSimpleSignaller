@@ -1,0 +1,25 @@
+{
+  "name": "webrtcsimplesignaller",
+  "version": "1.0.0",
+  "description": "A simple webrtc signaller, in short webrtcsimplesignaller - wss, that uses a websocket-connection (wss://). Includes Channels",
+  "main": "server.js",
+  "scripts": {
+    "demo": "node example/app/app.js",
+    "test": "ava --verbose tests/*.js"
+  },
+  "keywords": [
+    "signaller",
+    "socket",
+    "channel",
+    "webrtc"
+  ],
+  "author": "nasskaltejuni",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^6.1.2"
+  },
+  "devDependencies": {
+    "ava": "^1.1.0",
+    "sinon": "^7.2.3"
+  }
+}

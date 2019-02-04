@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ExampleApp</title>
+</head>
+<body>
+<section>
+    <h1>Login as User</h1>
+    <form id="loginform">
+        <input type="text" name="username" id="username" placeholder="Username">
+        <button type="submit">Use this username</button>
+    </form>
+</section>
+<section>
+    <h1>Create a Channel</h1>
+    <form id="channelform">
+        <input type="text" name="channelname" id="channelname" placeholder="Channelname">
+        <button type="submit">Create this channel</button>
+    </form>
+</section>
+<section>
+    <h1>Join a Channel</h1>
+    <!-- div#channellist availableChannels forEach channel onclick join and redirect to channel -->
+    <div id="channellist">
+
+    </div>
+</section>
+<script>
+    const loginform = document.getElementById("loginform");
+    const channelform = document.getElementById("channelform");
+    const usernamefield = document.getElementById("username");
+    const channelnamefield = document.getElementById("channelname");
+    loginform.onsubmit = function(e){
+        e.preventDefault();
+        fetch('/user',{method: "POST", body: JSON.stringify({name: usernamefield.value}), headers: {"Content-Type": "application/json"},})
+            .then(res => res.json())
+            .then(console.log)
+            .catch(console.error)
+    }
+</script>
+</body>
+</html>

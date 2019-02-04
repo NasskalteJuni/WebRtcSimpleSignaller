@@ -1,0 +1,16 @@
+# Temporary files (like swap-files or similar)
+*.tmp
+.*.sw?
+
+# IDE related configuration files (to avoid overwriting someones editor config)
+.idea/
+*.iml
+workspace/
+*.metadata
+
+# Dependencies (run npm install or similar)
+node_modules/
+
+# Avoid zip binaries that are probably not part of the deployment but results of it running
+*.zip
+*.tar
