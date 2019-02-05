@@ -55,14 +55,16 @@ class Hub extends Listenable(){
     }
 
     send(message) {
-        if(message.channel === Message.ALL){
-            const channels = this.channelsOfUser(message.from);
-            const users = message.to === Message.ALL ? this.memberSetOfChannelsExceptOfUser(channels, message.from) : this.user(message.to);
-            users.forEach(user => this.sendOverSocket(user.socket, message));
+        if(message.channel === Message.Addresses.ALL){
+            if(message.to === Message.Addresses.ALL)
+                Channel.byMember(message.from).forEach(channel => channel.users.forEach(user => this.sendToUser(user, message)));
+            else
+                this.sendToUser(message.to, message);
         }else{
-            const channel = this.channel(message.channel);
-            const users = message.to === Message.ALL ? this.membersOfChannelExceptOfUser(message.from) : this.user(message.to);
-            users.forEach(user => this.sendOverSocket(user.socket, message));
+            if(message.to === Message.Addresses.ALL)
+                Channel.byId(channel.to).users.forEach(user => this.sendToUser(user, message));
+            else
+                this.sendToUser(message.to, message);
         }
     }
 
@@ -95,46 +97,51 @@ class Hub extends Listenable(){
     join(user, channel){
         user = typeof user === "string" ? User.byId(user) : user;
         channel = typeof channel === "string" ? Channel.byId(channel) : channel;
-        channel.members.forEach(member => {
-            const m = new Message().withType(Types.JOIN).withContent(user.id).withReceiver(member).withChannel(channel.id).withSender('server');
-            this.send(m);
-        });
-        const m = new Message().withType(Types.CHANNEL).withContent(channel.members).withReceiver(user.id).withChannel(channel.id).withSender('server');
-        this.send(m);
+        const m = new Message().withSender(Message.Types.SERVER).withChannel(channel.id);
+        this.send(m.withType(Message.Types.JOIN).withContent(user.id).withReceiver(Message.Addresses.ALL));
+        this.send(m.withType(Message.Types.CHANNEL).withContent(channel.members).withReceiver(user.id));
         return user.join(channel);
     }
 
+    /**
+     * user should leave the channel and inform the clients
+     * @param {string | User} user the user to leave
+     * @param {string | Channel} channel the channel to leave
+     * */
     leave(user, channel){
         user = typeof user === "string" ? User.byId(user) : user;
         channel = typeof channel === "string" ? Channel.byId(channel) : channel;
-        channel.members.forEach(member => {
-            const m = new Message().withType(Types.LEAVE).withContent(user.id).withReceiver(member).withChannel(channel.id).withSender()
-        });
+        this.send(new Message({type: Message.Types.LEAVE, content: user.id, receiver: Message.Addresses.ALL, channel: channel.id, sender: Message.Addresses.SERVER}));
         return user.leave(channel);
     }
 
+    /**
+     * a channel should be opened and everyone should be informed about this
+     * @param {string | Channel} channel the channel or its id to be opened
+     * */
     open(channel){
         const t = Channel.open(channel);
-        User.all.forEach(user => {
-            const m = new Message().withType(Message.Types.OPEN).withContent(channel.id).withReceiver(user.id).withChannel(channel.id).withSender(Message.Addresses.SERVER);
-            this.send(m);
-        });
+        this.send(new Message().withType(Message.Types.OPEN).withContent(channel.id).withReceiver(Message.Addresses.ALL).withChannel(channel.id).withSender(Message.Addresses.SERVER));
         return t;
     }
 
+    /**
+     * a channel should be closed and the members should be informed about this
+     * @param {string | Channel} channel the channel to close
+     * */
     close(channel){
-        User.all.forEach(user => {
-            const m = new Message().withType(Message.Types.CLOSE).withContent(channel.id).withReceiver(user.id).withChannel(channel.id).withSender(Message.Addresses.SERVER);
-            this.send(m)
-        });
+        this.send(new Message({type: Message.Types.CLOSE, content: channel.id, receiver: Message.Addresses.ALL, sender: Message.Addresses.SERVER}));
         return Channel.close(channel);
     }
 
+    /**
+     * unauthenticates a user and informs its client about this
+     * @param {string | User} user the user to unauthenticate
+     * */
     unauthenticate(user){
         user = typeof User === "string" ? User.byId(user) : user;
         user.channels.forEach(channel => this.leave(user, channel));
-        const m = new Message().withType(Message.Types.DEAUTH).withContent(user.id).withReceiver(user.id).withChannel(Message.Addresses.ALL).withSender(Message.Addresses.SERVER);
-        this.send(m);
+        this.send(new Message({type: Message.Types.DEAUTH, receiver: user.id, channel: Message.Addresses.ALL, sender: Message.Addresses.SERVER}));
         return User.unauthenticate(user);
     }
 

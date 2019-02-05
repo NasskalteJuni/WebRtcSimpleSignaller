@@ -1,5 +1,6 @@
-const Listenable = require("../Utils/Listenable.js");
-const Message = require("../Utils/Message.js");
+const Listenable = require("../Utils/Listenable");
+const Message = require("../Utils/Message");
+const Channel = require("./Channel");
 const WebSocket = require("ws");
 
 class Signaller extends Listenable() {
@@ -8,21 +9,19 @@ class Signaller extends Listenable() {
         super();
         if(url.indexOf("://") === -1) url = 'wss://' + url;
         url = url.replace(/^http/, 'ws');
-        this.url = url;
         this.socket = new WebSocket(url);
-        this.onopen = () => this.trigger('ready', this.socket);
-        this.onerror = e => this.trigger('error', e);
+        this.onopen = () => this.trigger(Message.Types.CONNECT);
+        this.onclose = () => this.trigger(Message.Types.DISCONNECT);
+        this.onerror = e => console.error(e);
         this.onmessage = e => this._messagehandler(new Message(JSON.parse(e.data)));
         this.channels = [];
         this.id = null;
-        this.send = this.send.bind(this);
-        this.send.server = (type, content) => this.send(new Message().withType(type).withContent(content).asServerMessage())
     }
 
     _messagehandler(message) {
         if (message.channel === Message.ALL) {
             this.channels.forEach(channel => channel._messagehandler(message));
-        }else if(message.channel !== Message.NONE){
+        }else{
             const channel = this.channel(message.channel);
             if (channel) channel._messagehandler(message);
         }
@@ -36,18 +35,9 @@ class Signaller extends Listenable() {
      * @returns Promise resolves when the authentication was successful, fails when it was not successful or after 5 seconds
      * */
     async auth(userId, token) {
-        const response = this.request('auth',{userId, token});
+        const response = this.request('auth',{id, token});
         if(response === "INVALID") throw new Error(response);
         return response;
-    }
-
-    /**
-     * gives a list of channel names that one can join
-     * @returns a list of all channel names that are not added to the Signallers channels and can be joined through join(id)
-     * */
-    async joinableChannels(){
-        const channels = await this.request('channels', null);
-        return channels.filter(channel => this.channels.indexOf(channel) === -1);
     }
 
     /**
@@ -94,16 +84,16 @@ class Signaller extends Listenable() {
 
     request(type, content, maxtime=5000){
         return new Promise((resolve, reject) => {
-            const authMessage = new Message().withType(type).withContent(content).asServerMessage();
-            this.send(authMessage);
+            const msg = new Message().withType(type).withContent(content).withSender(this.id).withReceiver(Message.Addresses.SERVER);
+            this.send(msg);
             const timeout = setTimeout(() => {
                 clearTimeout(timeout);
                 reject(new Error("TIMEOUT"));
             }, maxtime);
             const handler = response => {
-                if(response.mid = authMessage._mid){
+                if(response.ansered = msg._mid){
                     this.off(type, handler);
-                    resolve(message.content);
+                    resolve(response.content);
                 }
             };
             this.on(type, handler);
