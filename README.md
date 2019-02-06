@@ -30,11 +30,11 @@ since a message channel is required to setup and initialize the peer connection.
 The client only knows channels he is part of and in conclusion, only members of these channels.
 Channels do not exist as Objects when the client has not joined them, the same goes for members.
 The Channel and Member Objects trigger on Message reception, more precise:
-A message of type 'someCustomType' sent by User A in Channel c1 triggers on .channel("c1").member("A").on("someCustomType", ...).
+A message of type 'someCustomType' sent by User A in Channel c1 triggers on `.channel("c1").member("A").on("someCustomType", ...)`.
 After triggering on the specific user, the someCustomType-Event raises to the higher level and the channel is triggered.
 Message sending works in a similar way.
 To send a message to the channel member User B in Channel c1, one uses the corresponding client objects:
-This means invoking .channel("c1").member("B").send("someOtherCustomType", ...)
+This means invoking `.channel("c1").member("B").send("someOtherCustomType", ...)`
 
 ### Broadcasts
 One could send and receive messages for each client in a channel,
