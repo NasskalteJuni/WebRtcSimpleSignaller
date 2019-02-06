@@ -4,8 +4,8 @@
  * @author nasskaltejuni
  * */
 const test = require('ava');
-const User = require('../Server/User');
-const Channel = require('../Server/Channel');
+const User = require('../src/Server/User');
+const Channel = require('../src/Server/Channel');
 
 test.before(t => {
     // generate dummies and a few utility functions for the text context

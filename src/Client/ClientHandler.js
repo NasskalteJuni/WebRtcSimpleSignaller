@@ -1,9 +1,9 @@
 const Listenable = require("../Utils/Listenable");
 const Message = require("../Utils/Message");
-const Channel = require("./Channel");
+const Channel = require("./ChannelHandler");
 const WebSocket = require("ws");
 
-class Signaller extends Listenable() {
+class ClientHandler extends Listenable() {
 
     constructor(url) {
         super();
@@ -107,10 +107,10 @@ class Signaller extends Listenable() {
                 content: arguments[1]
             });
         }
-        if(!message._from) message = message.withSender(this.id);
+        if(!message._sender) message = message.withSender(this.id);
         this.socket.send(JSON.stringify(message));
     }
 
 }
 
-module.exports = Signaller;
+module.exports = ClientHandler;

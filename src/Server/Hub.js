@@ -4,27 +4,25 @@ const Message = require("../Utils/Message");
 const Context= require("./ServerContext");
 const User = require("./User");
 const Channel = require("./Channel");
-const TYPES = require("../Utils/Types");
 
+/**
+ * A hub is a special server that handles client connections and transfers the sent data.
+ * It manages Channel and User instances and relates them in a ServerContext to the current socket connection and received messages
+ * */
 class Hub extends Listenable(){
 
     /**
      * Creates a new Hub that controls the server side of our signaller
-     * @param {Object} config an Object that may has the following properties
-     *  - {HttpServer} [new HttpServer()] server -  optional node http(s) server to be used as a basis for the web socket connection.
-     *  - {Integer} [80] port - port number used, when no server was passed, default port 80
-     *  - {Function} [() => true] authentication function - function that checks auth requests. Receives id and token as parameter, then the socket
-     *  - {Boolean} [true] allowChannelManipulationOverSocket - defines, if clients should be able to call create and close methods
-     *  - {Boolean} [false] autoCreateChannelOnJoin - when a client tries to join a not-existing channels, it is created
-     *  - {Boolean} [false] autoCloseChannelOnEmpty - when the last client leaves the channel, it will be closed
-     *  - {Boolean} [true] allowGlobalBroadcast - if set to true, Messages to all Channels (channel: Message.ALL) are forwarded to every channel the user is part of
-     * */
-    constructor(config){
+     * @param {Object} config - an Object with properties to configure the Hub Server
+     * @param {Server} [server] - a node http server to use. If none is given, a new one will be instantiated
+     * @param {int} [config.port=80] - the port the server will be running on. Defaults to the standard HTTP Port.
+     */
+    constructor({port, server}){
         super();
-        this.socketServer = ws.Server({port});
+        this.socketServer = ws.Server({port, server});
         this.socketServer.on('connection', socket => {
             socket.on('message', message => {
-                message = new Message(JSON.parse(message));
+                message = new Message(Object.assign(JSON.parse(message),{forwarded: new Date()}));
                 const hub = this;
                 const context = new Context({message, socket, hub});
                 this.trigger(message.type, context);
@@ -54,17 +52,27 @@ class Hub extends Listenable(){
         });
     }
 
+    /**
+     * Sends a message over the matching socket connection(s).
+     * The Message must define the sender, receiver and channel, so that it can be transmitted accordingly.
+     * How is a message sent by User A handled:
+     * Receiver User B, Channel 1 -> sent to User B
+     * Receiver All, Channel 1 -> sent to every User in Channel 1 except User A
+     * Receiver User B, Channel All -> sent to User B
+     * Receiver All, Channel All -> sent to every User in every Channel User A is part of, except to User A
+     * @param {Message} message - the message to send
+     * */
     send(message) {
         if(message.channel === Message.Addresses.ALL){
-            if(message.to === Message.Addresses.ALL)
+            if(message.receiver === Message.Addresses.ALL)
                 Channel.byMember(message.from).forEach(channel => channel.users.forEach(user => this.sendToUser(user, message)));
             else
-                this.sendToUser(message.to, message);
+                this.sendToUser(message.receiver, message);
         }else{
-            if(message.to === Message.Addresses.ALL)
-                Channel.byId(channel.to).users.forEach(user => this.sendToUser(user, message));
+            if(message.receiver === Message.Addresses.ALL)
+                Channel.byId(channel.receiver).users.forEach(user => this.sendToUser(user, message));
             else
-                this.sendToUser(message.to, message);
+                this.sendToUser(message.receiver, message);
         }
     }
 

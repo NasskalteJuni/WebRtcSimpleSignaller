@@ -1,6 +1,6 @@
 const test = require('ava');
-const User = require('../Server/User');
-const Channel = require('../Server/Channel');
+const User = require('../src/Server/User');
+const Channel = require('../src/Server/Channel');
 
 test.before(t => {
     t.context.fakeWebSocket = () => ({socketid: Math.random().toString(32).substr(2)});

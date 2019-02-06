@@ -3,12 +3,20 @@ const Channel = require('./Channel');
 const User = require('./User');
 
 /**
- * Handles message context
+ * A Context Object produced by the Hub that handles message context.
+ * It is intended to be based on a received message on the server and offers functionality to handle the received message accordingly.
+ * This can be a reply to the given message, offering the user that sent the message as property and other utility functions,
+ * like allowing a call to join(channelId) to let the user join the given Channel.
  * */
 class ServerContext{
 
     /**
-     * create a new message receiving context, which has properties and methods to send the message
+     * create a new message receiving context, which has properties and methods to handle & send the message
+     * @private
+     * @param {Object} context - context data of the hub
+     * @param {Hub} context.hub - the Hub that received the message
+     * @param {Message} context.message - the message that was received
+     * @param {WebSocket} context.socket - the WebSocket on which the message was received
      * */
     constructor({hub, message, socket}={}){
         this._hub = hub;
@@ -18,7 +26,7 @@ class ServerContext{
 
     /**
      * @readonly
-     * @returns {Hub} the hub
+     * @returns {Hub} the current Hub instance
      * */
     get hub(){
         return this._hub;
@@ -49,6 +57,7 @@ class ServerContext{
     }
 
     /**
+     * a property that references the User instance on the Server which sent this message
      * @readonly
      * @returns {User} the user that sent the message over his socket connection
      * or null, if the socket connection has not been authenticated (therefore, we cannot say, which user it really is)
@@ -58,6 +67,7 @@ class ServerContext{
     }
 
     /**
+     * a property that references the Channel instance on the Server in which this message was sent
      * @readonly
      * @returns {Channel} the channel of this message or null
      * */
@@ -66,6 +76,7 @@ class ServerContext{
     }
 
     /**
+     * every channel that the user who sent the message is a member of
      * @readonly
      * @returns {Array} an array of channels that the user who sent the message over its connection is part of
      * (which is empty, if the connection is not authenticated and there is no user, obviously)
@@ -75,6 +86,7 @@ class ServerContext{
     }
 
     /**
+     * is the socket connection authenticated and does belong to a user?
      * @readonly
      * @returns {boolean} if the connection used was authenticated (then, there will be a user)
      * */
@@ -83,6 +95,9 @@ class ServerContext{
     }
 
     /**
+     * is the sender field in the message equal to the actual User id on the server
+     * (You may have use cases, where a user sends messages in the name of another user,
+     * but most of the time, this can be used as a check for forged messages with invalid sender id)
      * @readonly
      * @returns {boolean} if the sender of the message equals the authenticated user
      * (connection not authenticated ->  false)
@@ -124,7 +139,8 @@ class ServerContext{
 
     /**
      * removes a user from the authenticated users
-     * @param {string} [user=this.user] the user to unauthenticate
+     * (this will update the clients, who will also remove the user as member of any channels the user is part of)
+     * @param {string} [user=this.user] the user to un-authenticate
      * @returns {boolean} true, if the user was authenticated already and is now is not authenticated any more
      * */
     unauthenticate(user=undefined){
@@ -134,7 +150,7 @@ class ServerContext{
 
 
     /**
-     * the user with the id
+     * get the User instance with the given id
      * @param {string} id the id of the user
      * @returns {Object} the user object or null
      * */
@@ -143,7 +159,7 @@ class ServerContext{
     }
 
     /**
-     * the channel with the id
+     * get the channel instance with the given id
      * @param {string} id the id of a channel
      * @returns {Object} the channel object or null
      * */
@@ -152,7 +168,8 @@ class ServerContext{
     }
 
     /**
-     * let a user join a channel
+     * let a user join a channel and inform the clients
+     * (who will then add the user to their local channel instance)
      * @param {string | Object} channel the channel or its id to join. defaults to the messages channel. Always the first argument
      * @param {string | Object} user the user or its id that should join the given channel. defaults to the current user
      * @returns {boolean} true, if the user was NOT already part of that channel
@@ -164,7 +181,8 @@ class ServerContext{
     }
 
     /**
-     * let a user leave a channel
+     * let a user leave a channel and inform the clients
+     * (who will then remove the user from their local channel instance)
      * @param {string | Channel} channel the channel or its id to leave. defaults to the current messages channel. Always the first argument
      * @param {string | User} user the user or its id to leave the given channel. defaults to the current user
      * @return {boolean} true, if the user was part of that channel
@@ -176,7 +194,7 @@ class ServerContext{
     }
 
     /**
-     * Opens a new Channel (and creates it in the process)
+     * Open a new Channel (and create it in the process)
      * @param {string | Channel} channel the channel or its id to be opened. Without parameter, the current channel is used
      * @return {boolean} successful
      * */
@@ -185,7 +203,7 @@ class ServerContext{
     }
 
     /**
-     * Closes a Channel and inform everyone about it
+     * Close a Channel and inform everyone about it
      * @param {string | Channel} [channel=this.channel] the channel to be closed. Without parameter, the current channel is used
      * @returns {boolean} successful
      * */
@@ -194,23 +212,29 @@ class ServerContext{
     }
 
     /**
-     * Uses the current context to answer the user that sent the current request (or any kind of message)
-     * @param {string} [type=this.message.type] the type of the message. Defaults to the received message type
-     * @param {*} [content=this.message.content] the content of the response. if called with one argument, the given argument is seen as content
-     * @param {Message} [message=this.message] the message to use. Defaults to the current message. Always the last parameter
-     * */
+     * Use the current context to answer the user that sent the current message, but with a manipulated message
+     * @param {Message} message - the message to use in the answer (might come in handy, if other message fields should be manipulated beforehand)
+     * *//**
+     * Use the current content context to answer the current message but with the given type and content
+     * @param {string} type - the type of the answer Message
+     * @param {*} content - the content of the answer Message
+     *//**
+     * Use the current context to answer the message with different content
+     * @param {*} content - the content to use in the answer
+     */
     reply(type, content, message=undefined){
         message = this._messageFromArgs(arguments);
         if(this._argumentsLengthWithoutMessage(arguments) === 2) message = message.withType(type);
         if(this._argumentsLengthWithoutMessage(arguments) > 0) message = message.withContent(arguments[this._argumentsLengthWithoutMessage(arguments)-1]);
-        let reply = this.message.withType(type).withContent(content).withReceiver(message.from).asServerMessage();
+        let reply = this.message.withType(type).withContent(content).withReceiver(message.sender).withSender(Message.Addresses.SERVER)
         this.hub.sendOverSocket(this.socket, reply);
     }
 
 
     /**
      * Uses the current context to just send the message. The message is handed down like described, without doing anything else
-     * @param {Message} [message=this.message] the message that should be send. defaults to the received message
+     * @param {Message} [message=this.message] - the message that should be send. defaults to the received message
+     * (this will be effectively forwarding the received message)
      * */
     send(message=undefined){
         this.hub.send(message === undefined ? this.message : message);

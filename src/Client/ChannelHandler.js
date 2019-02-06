@@ -1,6 +1,6 @@
 const Listenable = require("../Utils/Listenable");
 const Message = require("../Utils/Message");
-const Member = require("./Member");
+const Member = require("./MemberHandler");
 
 /**
  * A Channel is a set of 1 or more Members, that can send and receive direct and broadcast messages between each other.
@@ -8,12 +8,12 @@ const Member = require("./Member");
  * The Listenable-Mixin is used to trigger on('type', (content, msg) => ...) event handlers for messages that are sent by other clients
  * or for updates to the members of the channel
  * */
-class Channel extends Listenable(){
+class ChannelHandler extends Listenable(){
 
-    constructor(id, signaller){
+    constructor(id, client){
         super();
         this.id = id;
-        this.signaller = signaller;
+        this.client = client;
         this.members = [];
         this.on(Message.Types.CHANNEL, list => this.members = list.map(m => new Member(m, this.id)));
         this.on(Message.Types.JOIN, m => this.members.push(new Member(m, this.id)));
@@ -21,10 +21,10 @@ class Channel extends Listenable(){
     }
 
     _messagehandler(message) {
-        if(message._to === Message.Addresses.ALL){
+        if(message._receiver === Message.Addresses.ALL){
             this.members.forEach(member => member._messagehandler(message));
         }else{
-            const member = this.member(message._to);
+            const member = this.member(message._receiver);
             if (member) member._messagehandler(message);
         }
         this.trigger(message.type, [message.content, message]);
@@ -43,7 +43,7 @@ class Channel extends Listenable(){
      * Send messages to everyone in this channel
      * send.broadcast same as send, triggers also on every member
      * send.halting only triggers on channel, but none of the members
-     * @param {Message | String} message a message object OR type, content to create a message with given type and content
+     * @param {Message} message a message object
      * */
     send(message){
         if(arguments.length === 2){
@@ -52,10 +52,10 @@ class Channel extends Listenable(){
                 content: arguments[1]
             });
         }
-        if(!message.to) message = message.withReceiver(Message.ALL);
+        if(!message.receiver) message = message.withReceiver(Message.ALL);
         if(!message.channel) message = message.withChannel(this.id);
-        this.signaller.send(message);
+        this.client.send(message);
     };
 }
 
-module.exports = Channel;
+module.exports = ChannelHandler;

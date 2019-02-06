@@ -1,7 +1,7 @@
 const Listenable = require("../Utils/Listenable.js");
 const Message = require("../Utils/Message.js");
 
-class Member extends Listenable(){
+class MemberHandler extends Listenable(){
 
     constructor(id, channel){
         super();
@@ -16,7 +16,7 @@ class Member extends Listenable(){
                 content: arguments[1]
             });
         }
-        if(!message.to) message = message.withReceiver(this.id);
+        if(!message.receiver) message = message.withReceiver(this.id);
         this.channel.send(message);
     }
 
@@ -26,4 +26,4 @@ class Member extends Listenable(){
 
 }
 
-module.exports = Member;
+module.exports = MemberHandler;

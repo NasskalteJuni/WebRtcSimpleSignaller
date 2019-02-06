@@ -4,32 +4,32 @@
  * @author nasskaltejuni
  * */
 const test = require("ava");
-const Signaller = require("../Client/Signaller");
-const Channel = require("../Client/Channel");
-const Member = require("../Client/Member");
-const Message = require("../Utils/Message");
+const Signaller = require("../src/Client/ClientHandler");
+const Channel = require("../src/Client/ChannelHandler");
+const Member = require("../src/Client/MemberHandler");
+const Message = require("../src/Utils/Message");
 
 test.beforeEach(t => {
     // mock a few expected things...
-    t.context.signaller = new Signaller("wss://localhost");
+    t.context.client = new Signaller("wss://localhost");
     //bypass auth and just set the id
-    t.context.signaller.id = "member_self";
+    t.context.client.id = "member_self";
     // just act like these have been added/created already
-    t.context.testChannel1 = new Channel("test_channel_1", t.context.signaller);
-    t.context.testChannel2 = new Channel("test_channel_2", t.context.signaller);
+    t.context.testChannel1 = new Channel("test_channel_1", t.context.client);
+    t.context.testChannel2 = new Channel("test_channel_2", t.context.client);
     t.context.testMember1 = new Member("member_1", t.context.testChannel1);
     t.context.testMember2 = new Member("member_2", t.context.testChannel2);
     t.context.testMember3 = new Member("member_3", t.context.testChannel2);
-    t.context.signaller.channels.push(t.context.testChannel1);
-    t.context.signaller.channels.push(t.context.testChannel2);
+    t.context.client.channels.push(t.context.testChannel1);
+    t.context.client.channels.push(t.context.testChannel2);
     t.context.testChannel1.members.push(t.context.testMember1);
     t.context.testChannel2.members.push(t.context.testMember2);
     t.context.testChannel2.members.push(t.context.testMember3);
-    t.context.message = (channel, to, from) => t.context.signaller._messagehandler(new Message({channel, from, to, type: "test", content: "example"}))
+    t.context.message = (channel, to, from) => t.context.client._messagehandler(new Message({channel, from, to, type: "test", content: "example"}))
 });
 
 test("Client hands incoming messages to specific member correctly and triggers handle on member", t => {
-    t.context.signaller
+    t.context.client
         .channel("test_channel_1")
         .member("member_1")
         .on("test", content => content === "example" ? t.pass("member received valid message") : t.fail("Invalid message content"));
@@ -37,11 +37,11 @@ test("Client hands incoming messages to specific member correctly and triggers h
 });
 
 test("Client hands incoming messages to valid receiver (- and not sender)", t => {
-    t.context.signaller
+    t.context.client
         .channel("test_channel_2")
         .member("member_2")
         .on("test", ()=> t.fail("sender got message"));
-    t.context.signaller
+    t.context.client
         .channel("test_channel_2")
         .member("member_3")
         .on("test", ()=> t.pass("receiver got message"));
@@ -49,18 +49,18 @@ test("Client hands incoming messages to valid receiver (- and not sender)", t =>
 });
 
 test("receiving a message to a specific member triggers also the _channel the member is part of", t => {
-    t.context.signaller
+    t.context.client
         .channel("test_channel_1")
         .on("test", () => t.pass("_channel triggered"));
     t.context.message("test_channel_1","member_1","member_1");
 });
 
 test("Client hands incoming message to specific member correctly and does NOT trigger on other member in channel", t => {
-    t.context.signaller
+    t.context.client
         .channel("test_channel_2")
         .member("member_3")
         .on("test", () => t.fail("Invalid member got message"));
-    t.context.signaller
+    t.context.client
         .channel("test_channel_2")
         .member("member_2")
         .on("test", () => t.pass("Valid member got message"));
@@ -71,9 +71,9 @@ test.cb("receiving a message to broadcast (* or whatever Message.ALL currently i
     const receivers = [];
     const markAsReceiver = member => {
         receivers.push(member);
-        if(receivers.length === t.context.signaller.channel("test_channel_2").members.length) t.end();
+        if(receivers.length === t.context.client.channel("test_channel_2").members.length) t.end();
     };
-    t.context.signaller
+    t.context.client
         .channel("test_channel_2")
         .members
         .forEach(m => m.on("test", () => markAsReceiver(m.id)));
@@ -85,8 +85,8 @@ test.cb("receiving a message to really everyone, _channel = '*' / Message.ALL tr
     const receivers = [];
     const markAsReceiver = member => {
         receivers.push(member);
-        if(receivers.length === t.context.signaller.channels.length) t.end();
+        if(receivers.length === t.context.client.channels.length) t.end();
     };
-    t.context.signaller.channels.forEach(c => c.on("test", () => markAsReceiver(c.name)));
+    t.context.client.channels.forEach(c => c.on("test", () => markAsReceiver(c.name)));
     t.context.message(Message.Addresses.ALL,Message.Addresses.ALL,"member_2");
 });

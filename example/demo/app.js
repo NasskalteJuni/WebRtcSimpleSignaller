@@ -1,8 +1,8 @@
 /**
  * Simple Demo - Lacks every check for missing parameters, etc. so DO ONLY USE AS LOCAL EXAMPLE (obviously)
  * */
-const Hub = require("../../Server/Hub");
-const Types = require("../../Utils/Types");
+const Hub = require("../../src/Server/Hub");
+const Types = require("../../src/Utils/Types");
 const server = require("./SimpleServerExample")();  // Very simple test server
 const hub = new Hub({allowChannelManipulationOverSocket: true});
 const rand = () => Math.random().toString(32).substr(2);

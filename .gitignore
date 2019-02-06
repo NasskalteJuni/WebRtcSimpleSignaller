@@ -14,3 +14,6 @@ node_modules/
 # Avoid zip binaries that are probably not part of the deployment but results of it running
 *.zip
 *.tar
+
+# distribution builds
+dist/
