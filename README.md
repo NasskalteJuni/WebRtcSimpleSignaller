@@ -1,13 +1,13 @@
 # WebRTC Simple Signaller
 
-0. [0. View the docs](https://nasskaltejuni.github.io/WebRtcSimpleSignaller/)
-1. [1. What the f is this](#what-the-f-is-this)
-2. [2. Message handling on the client side](#message-handling-on-the-client-side)
-  2.1 [2.1 Basics](#basics)
-  2.2 [2.2 Broadcasts](#broadcasts)
-  2.3 [2.3 Lookup Table](#lookup-table)
-  2.4 [2.4 Advanced Message Handling](#advanced-message-handling)
-3. [3. Message handling on the server side](#message-handling-on-the-server-side)
+0. [ View the docs](https://nasskaltejuni.github.io/WebRtcSimpleSignaller/)
+1. [ What the f is this](#what-the-f-is-this)
+2. [ Message handling on the client side](#message-handling-on-the-client-side)
+    2.1 [ Basics](#basics)
+    2.2 [ Broadcasts](#broadcasts)
+    2.3 [ Lookup Table](#lookup-table)
+    2.4 [ Advanced Message Handling](#advanced-message-handling)
+3. [ Message handling on the server side](#message-handling-on-the-server-side)
 
 
 Version: *0.1* <br>
