@@ -3,10 +3,10 @@
 0. [ View the docs](https://nasskaltejuni.github.io/WebRtcSimpleSignaller/)
 1. [ What the f is this](#what-the-f-is-this)
 2. [ Message handling on the client side](#message-handling-on-the-client-side)
-    2.1 [ Basics](#basics)
-    2.2 [ Broadcasts](#broadcasts)
-    2.3 [ Lookup Table](#lookup-table)
-    2.4 [ Advanced Message Handling](#advanced-message-handling)
+    1 [ Basics](#basics)
+    2 [ Broadcasts](#broadcasts)
+    3 [ Lookup Table](#lookup-table)
+    4 [ Advanced Message Handling](#advanced-message-handling)
 3. [ Message handling on the server side](#message-handling-on-the-server-side)
 
 
@@ -14,7 +14,7 @@ Version: *0.1* <br>
 Status: *Not Finished, not working* <br>
 
 # What the f is this?
-* (And what does it do?) * <br>
+*(And what does it do?)* <br>
 Sometimes, applications may need to be able to send application data to specific users in specific channels.
 This is a so called *Signaller*, that handles the described transfer.
 The main purpose of a Signaller is to handle sending messages to and receiving messages from users.
@@ -43,7 +43,7 @@ This will set the receiver to Everyone and tells the server to forward the messa
 ### Look Up table
 If you want to quickly get a grasp about who receives which messages, you can use this cheat-table
 
-Sender is always UserA:
+**Sender is always UserA:**
 
 |Receiver    |    Channel     |    who receives it                                | on which node          |
 |-----------:|:--------------:|:-------------------------------------------------:|:-----------------------|
