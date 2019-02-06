@@ -1,9 +1,20 @@
 # WebRTC Simple Signaller
 
+- [0. View the docs](https://webrtc-simple-signaller.github.com/)
+- [1. What the f is this](#what-the-f-is-this)
+- [2. Message handling on the client side](#message-handling-on-the-client-side)
+-- [2.1 Basics](#basics)
+-- [2.2 Broadcasts](#broadcasts)
+-- [2.3 Lookup Table](#lookup-table)
+-- [2.4 Advanced Message Handling](#advanced-message-handling)
+- [3. Message handling on the server side](#message-handling-on-the-server-side)
+
+
 Version: *0.1* <br>
 Status: *Not Finished, not working* <br>
 
-# What the f is this? (And what does it do)
+# What the f is this?
+* (And what does it do?) * <br>
 Sometimes, applications may need to be able to send application data to specific users in specific channels.
 This is a so called *Signaller*, that handles the described transfer.
 The main purpose of a Signaller is to handle sending messages to and receiving messages from users.
@@ -11,7 +22,7 @@ This can be seen as a kind of chat app. But it is also a common requirement for 
 
 
 
-## Message handling on the client side:
+## Message handling on the client side
 
 ### Basics
 The client only knows channels he is part of and in conclusion, only members of these channels.
@@ -29,7 +40,7 @@ but broadcasting is so common that it is even included in this simple signaller.
 To broadcast to every user in a channel, just invoke the send-method on the corresponding channel object.
 This will set the receiver to Everyone and tells the server to forward the message to every user that is currently in this channel.
 
-# Look Up table
+### Look Up table
 If you want to quickly get a grasp about who receives which messages, you can use this cheat-table
 
 Sender is always UserA:
@@ -52,6 +63,8 @@ The Message Class offers more freedom to setting receiver, sender and channel th
 In fact .send(type, content) uses the underlying Message Class to communicate with the server,
 since every client server communication is handled over Message objects.
 Missing fields may be added by the Object send is called on.
+
+
 
 
 ## Message handling on the server side
