@@ -1,13 +1,13 @@
 # WebRTC Simple Signaller
 
-Version: 0.1
-Status: Not Finished, not working
+Version: *0.1* <br>
+Status: *Not Finished, not working* <br>
 
 # What the f is this? (And what does it do)
 Sometimes, applications may need to be able to send application data to specific users in specific channels.
-This is a so called Signaller, that handles the described transfer.
+This is a so called *Signaller*, that handles the described transfer.
 The main purpose of a Signaller is to handle sending messages to and receiving messages from users.
-This can be seen as a kind of chat app. But it is also a common requirement for building webrtc apps
+This can be seen as a kind of chat app. But it is also a common requirement for building **webrtc apps**
 
 
 
@@ -34,11 +34,12 @@ If you want to quickly get a grasp about who receives which messages, you can us
 
 Sender is always UserA:
 
-Receiver        Channel         who receives it                                 on which node
-UserB           ChannelA        UserB                                           UserA
-ALL             ChannelA        Every User in ChannelA except UserA             UserA
-ALL             ALL             Every User in every Channel of UserA except A   UserA
-UserB           ALL             UserB                                           UserA in Channels of A
+|Receiver    |    Channel     |    who receives it                                | on which node          |
+|-----------:|:--------------:|:-------------------------------------------------:|:-----------------------|
+|UserB       |    ChannelA    |    UserB                                          | UserA                  |
+|ALL         |    ChannelA    |    Every User in ChannelA except UserA            | UserA                  |
+|ALL         |    ALL         |    Every User in every Channel of UserA except A  | UserA                  |
+|UserB       |    ALL         |    UserB                                          | UserA in Channels of A |
 
 ### Advanced Message handling
 As already explained, the client side message handling has the form of a tree with the signaller being the root note,
@@ -63,10 +64,13 @@ Methods and properties, like the current user and which channels he belongs to a
 
 Using the client side sending example, where the member User A of Channel c1 sends a message to member B, we receive the following on the server side:
 
+```
 hub.on("someCustomType", context => ...)
+```
 
 With the given context, we can answer messages or forward them to everyone:
 
+```
 hub.on("someCustomType", ({user, content, channel}) => {
     console.log('message of user with id '+user.id+' and content '+content);
     const ack = new Message().withType('ACK')
@@ -76,3 +80,4 @@ hub.on("someCustomType", ({user, content, channel}) => {
                             .withReceiver(user.id);
     hub.send(ack);
 })
+```
