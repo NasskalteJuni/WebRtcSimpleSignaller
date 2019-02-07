@@ -91,7 +91,7 @@ class ClientHandler extends Listenable() {
                 reject(new Error("TIMEOUT"));
             }, maxtime);
             const handler = response => {
-                if(response.ansered = msg._mid){
+                if(response.ansered = msg._id){
                     this.off(type, handler);
                     resolve(response.content);
                 }
@@ -108,7 +108,7 @@ class ClientHandler extends Listenable() {
             });
         }
         if(!message._sender) message = message.withSender(this.id);
-        this.socket.send(JSON.stringify(message));
+        this.socket.send(JSON.stringify(message.asDataObject()));
     }
 
 }

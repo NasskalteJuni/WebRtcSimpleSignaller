@@ -93,7 +93,7 @@ test.serial('Closing an already closed channel does not change the opened channe
 });
 
 test.serial('adding a member by its ID to a channel works', t => {
-    console.log('adding member in test yields true?', t.context.openedDummy.addMember(t.context.testUserBId));
+    t.context.openedDummy.addMember(t.context.testUserBId);
     t.true(t.context.openedDummy.members.indexOf(t.context.testUserBId) !== -1);
 });
 

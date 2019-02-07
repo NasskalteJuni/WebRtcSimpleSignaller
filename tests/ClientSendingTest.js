@@ -52,13 +52,13 @@ test("sending a message over a _channel by (type, content) acts as broadcast", t
 
 
 test("using send on a _channel by passing a message just acts as send without changing given sender and receiver", t => {
-    t.context.client.channel("test_channel_2").send(new Message({to: "test-receiver", from: "test-sender"}));
+    t.context.client.channel("test_channel_2").send(new Message({receiver: "test-receiver", sender: "test-sender"}));
     const msg = new Message(JSON.parse(t.context.client.socket.send.args[0]));
     t.true(msg.receiver === "test-receiver" && msg.sender === "test-sender")
 });
 
 test("using send on a member by passing a message just acts as send without changing given sender and receiver", t => {
-    t.context.client.channel("test_channel_2").member("member_3").send(new Message({to: "test-receiver", from: "test-sender"}));
+    t.context.client.channel("test_channel_2").member("member_3").send(new Message({receiver: "test-receiver", sender: "test-sender"}));
     const msg = new Message(JSON.parse(t.context.client.socket.send.args[0]));
     t.true(msg.receiver === "test-receiver" && msg.sender === "test-sender")
 });

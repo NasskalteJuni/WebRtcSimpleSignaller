@@ -19,25 +19,26 @@ class Message{
      * @param {string} [message.answered=undefined] - the id of the Message that this Message is an answer to
      * @constructor
      * */
-    constructor({mid=Math.random().toString(32).substr(2), type, content, channel, receiver, sender, sent=new Date(), forwarded=undefined, answered=undefined} = {}){
-        this._mid = mid;
-        this._type = type;
-        this._content = content;
-        this._channel = channel;
-        this._receiver = receiver;
-        this._sender = sender;
-        this._sent = sent;
-        this._forwarded = forwarded;
-        this._answered = answered;
+    constructor({id = Math.random().toString(32).substr(2), type=undefined, content=undefined, channel=undefined, receiver=undefined, sender=undefined, sent=new Date(), forwarded=undefined, answered=undefined} = {}){
+        const message = arguments.length === 1 && arguments[0] instanceof Message ? arguments[0].asDataObject() : {};
+        this._id = id || message.id;
+        this._type = type || message.type;
+        this._content = content || message.content;
+        this._channel = channel || message.channel;
+        this._receiver = receiver || message.receiver;
+        this._sender = sender || message.sender;
+        this._sent = sent || message.sent;
+        this._forwarded = forwarded || message.forwarded;
+        this._answered = answered || message.answered;
     }
 
     /**
      * allows to identify a message or an answer (message, where another member exchanged the content (and maybe type) and sent it back)
      * @readonly
-     * @returns the message id
+     * @returns {string} the message id
      * */
-    get mid(){
-        return this._mid;
+    get id(){
+        return this._id;
     }
 
     /**
@@ -187,7 +188,7 @@ class Message{
         if(arguments.length === 1){
             msg._content = arguments[0];
         }else if(arguments.length === 2){
-            msg._type = arguments;
+            msg._type = arguments[0];
             msg._content = arguments[1];
         }else if(arguments.length > 2){
             throw new Error("Invalid Argument number");
@@ -196,9 +197,31 @@ class Message{
         const tmp = msg._sender;
         msg._sender = msg._receiver;
         msg._receiver = tmp;
-        msg._answered = this._mid;
-        this._mid = Math.random().toString(32).substr(2);
+        msg._answered = this._id;
+        this._id = Math.random().toString(32).substr(2);
         return msg;
+    }
+
+    /**
+     * Creates a simple Javascript Object that is not an instance of Message but shares all getters as fields.
+     * This offers a way to quickly retrieve all current data without breaking immutability.
+     * A use case could be, that the current JS version does not support the object spread syntax for getters,
+     * so retrieving the data fields would be necessary.
+     * @returns {Object} a simple js object (not a Message!) with the readable properties as fields
+     * */
+    asDataObject(){
+        const self = this;
+        return {
+            id: self.id,
+            type: self.type,
+            content: self.content,
+            sender: self.sender,
+            receiver: self.receiver,
+            channel: self.channel,
+            sent: self.sent,
+            forwarded: self.forwarded,
+            answered: self.answered,
+        }
     }
 
     /**
