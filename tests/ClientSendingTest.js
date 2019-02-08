@@ -15,7 +15,7 @@ const Message = require("../src/Utils/Message");
 test.beforeEach(t => {
     t.context.client = new Signaller("wss://example.com");
     //bypass auth and just set the id
-    t.context.client.id = "member_self";
+    t.context.client._id = "member_self";
     // stub every method on the websocket (including send) and prevent default socket behaviour (like connecting)
     t.context.client.socket = sinon.stub(t.context.client.socket);
     // just act like these have been added/created already

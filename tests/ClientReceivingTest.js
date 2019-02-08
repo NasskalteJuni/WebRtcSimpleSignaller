@@ -15,7 +15,7 @@ test.beforeEach(t => {
     // mock a few expected things...
     t.context.client = new Signaller("wss://localhost");
     //bypass auth and just set the id
-    t.context.client.id = "member_self";
+    t.context.client._id = "member_self";
     // stub the websocket to avoid connection errors
     t.context.client.socket = sinon.stub(t.context.client.socket);
     // just act like these have been added/created already
@@ -31,38 +31,40 @@ test.beforeEach(t => {
     t.context.testChannel1.members.push(t.context.testMember1);
     t.context.testChannel2.members.push(t.context.testMember2);
     t.context.testChannel2.members.push(t.context.testMember3);
-    t.context.testChannel3.members.push(t.context.testMember2);
-    t.context.message = (channel, receiver, sender) => t.context.client._messagehandler(new Message({channel, sender, receiver, type: "test", content: "example"}))
+    t.context.testChannel3.members.push(t.context.testMember2Channel3);
+    t.context.message = (channel, sender, receiver) => t.context.client._messagehandler(new Message({channel, sender, receiver, type: "test", content: "example"}))
 });
 
-test("Client hands incoming messages to specific member correctly and triggers handle on member", t => {
+test("Client hands incoming messages to specific sending member correctly and triggers handle on member", t => {
+    const sender = t.context.testMember1.id;
+    const channel = t.context.testChannel1.id;
     t.context.client
-        .channel("test_channel_1")
-        .member("member_1")
+        .channel(channel)
+        .member(sender)
         .on("test", content => content === "example" ? t.pass("member received valid message") : t.fail("Invalid message content"));
-    t.context.message("test_channel_1", "member_1", "member_1");
+    t.context.message(channel, sender, sender);
 });
 
-test("Client hands incoming messages to valid receiver (- and not sender)", t => {
+test("Client hands incoming messages to correct member (the sender and not the receiver, identifying the receiver is done on the server)", t => {
     t.context.client
         .channel("test_channel_2")
         .member("member_2")
-        .on("test", ()=> t.fail("sender got message"));
+        .on("test", ()=> t.true("triggered on sender"));
     t.context.client
         .channel("test_channel_2")
         .member("member_3")
-        .on("test", ()=> t.pass("receiver got message"));
-    t.context.message("test_channel_2","member_3","member_2")
+        .on("test", ()=> t.fail("triggered on receiver"));
+    t.context.message("test_channel_2", "member_2", "member_3")
 });
 
-test("receiving a message to a specific member triggers also the channel the member is part of", t => {
+test("receiving a message from a sender in a specific channel triggers also the channel the sender is part of", t => {
     t.context.client
         .channel("test_channel_1")
         .on("test", () => t.pass("_channel triggered"));
-    t.context.message("test_channel_1","member_1","member_1");
+    t.context.message("test_channel_1", "member_1", "member_1");
 });
 
-test("Client hands incoming message to specific member correctly and does NOT trigger on other members in channel", t => {
+test("Client hands incoming message from a specific member correctly and does NOT trigger on other members in channel", t => {
     t.context.client
         .channel("test_channel_2")
         .member("member_3")
@@ -71,30 +73,29 @@ test("Client hands incoming message to specific member correctly and does NOT tr
         .channel("test_channel_2")
         .member("member_2")
         .on("test", () => t.pass("Valid member got message"));
-    t.context.message("test_channel_2","member_2","member_2");
+    t.context.message("test_channel_2", "member_2", "member_2");
 });
 
-test.cb("receiving a message to broadcast (Message.Addresses.ALL) triggers every member of the channel", t => {
-    const receivers = [];
-    const markAsReceiver = member => {
-        receivers.push(member);
-        if(receivers.length === t.context.client.channel("test_channel_2").members.length) t.end();
-    };
+test.cb("receiving a message to broadcast (Message.Addresses.ALL) for a specific channel still only triggers for the sender", t => {
+    const sender = t.context.testMember3;
+    const channel = t.context.testChannel2.id;
     t.context.client
-        .channel("test_channel_2")
-        .members
-        .forEach(m => m.on("test", () => markAsReceiver(m.id)));
-    t.context.message("test_channel_2",Message.Addresses.ALL,"member_3");
+        .channel(channel)
+        .member(sender)
+        .on('test', () => t.pass("triggered on sender"));
+    t.context.message(channel, sender, Message.Addresses.ALL);
 });
 
 
-test.cb("receiving a message to everyone (Message.Addresses.ALL as channel) triggers on each sender handler in each channel the sender is part of", t => {
+test.cb("receiving a message with Message.Addresses.ALL as channel triggers on each sender handler in each channel the sender is part of", t => {
     const receivers = [];
     const markAsReceiver = member => {
         receivers.push(member);
         console.log('triggered member', member);
         if(receivers.length === 2) t.end();
     };
-    t.context.client.channels.forEach(c => c.on("test", () => markAsReceiver(c.name)));
-    t.context.message(Message.Addresses.ALL,Message.Addresses.ALL,"member_2");
+    const sender = "member_2";
+    t.context.client.channel(t.context.testChannel2.id).member(sender).on("test", () => markAsReceiver('channel 2'));
+    t.context.client.channel(t.context.testChannel3.id).member(sender).on("test", () => markAsReceiver('channel 3'));
+    t.context.message(Message.Addresses.ALL, sender, Message.Addresses.ALL);
 });

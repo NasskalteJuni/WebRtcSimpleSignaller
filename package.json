@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "demo": "node example/app/app.js",
-    "doc": "./node_modules/.bin/jsdoc ./src -r --destination ./docs",
+    "doc": "./node_modules/.bin/jsdoc ./src -r --destination ./docs --readme ./README.md",
     "test": "ava --verbose tests/*.js",
     "build": "node ./build/build.js"
   },

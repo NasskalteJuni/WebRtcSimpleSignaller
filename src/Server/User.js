@@ -36,6 +36,14 @@ class User{
     }
 
     /**
+     * all channels that this user is a member of
+     * @returns {Channel[]} a list of the channels, where this user is a member
+     * */
+    get channels(){
+        return Channel.byMember(this.id);
+    }
+
+    /**
      * a User exactly like this one, but with the given id
      * @param {string} id the id of the new User Object
      * @returns {User} a newly created user Object, but with the given id
@@ -51,14 +59,6 @@ class User{
      * */
     withSocket(socket){
         return new User(this.id, socket);
-    }
-
-    /**
-     * all channels that this user is a member of
-     * @returns {Channel[]} a list of the channels, where this user is a member
-     * */
-    get channels(){
-        return Channel.byMember(this.id);
     }
 
     /**
@@ -128,6 +128,8 @@ class User{
 
     /**
      * checks if the user is a member of the given channel
+     * @param {string | Channel} channel the channel to check for
+     * @returns {boolean} true, if the user is indeed a member of the channel
      * */
     isMemberOf(channel){
         const c = Channel.byId(channel.id || channel);
@@ -182,7 +184,8 @@ class User{
      * @returns {User[]}
      * */
     static unique(users){
-        return ArrayTools.unique(users, (a,b) => a.id === b.id);
+        console.log('input', users);
+        return ArrayTools.unique(users, (a,b) => a.id === b.id || console.log('compare',a, b));
     }
 
     /**

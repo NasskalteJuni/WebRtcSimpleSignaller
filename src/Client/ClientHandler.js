@@ -19,7 +19,7 @@ class ClientHandler extends Listenable() {
     }
 
     _messagehandler(message) {
-        if (message.channel === Message.ALL) {
+        if (message.channel === Message.Addresses.ALL) {
             this.channels.forEach(channel => channel._messagehandler(message));
         }else{
             const channel = this.channel(message.channel);
