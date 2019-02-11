@@ -9,18 +9,39 @@ class ClientHandler extends Listenable() {
         super();
         if(url.indexOf("://") === -1) url = 'wss://' + url;
         url = url.replace(/^http/, 'ws');
-        this.socket = new WebSocket(url);
+        this._socket = new WebSocket(url);
         this.onopen = () => this.trigger(Message.Types.CONNECT);
         this.onclose = () => this.trigger(Message.Types.DISCONNECT);
         this.onerror = e => console.error(e);
         this.onmessage = e => this._messagehandler(new Message(JSON.parse(e.data)));
-        this.channels = [];
-        this.id = null;
+        this._channels = [];
+        this._id = null;
     }
+
+    /**
+     * get every channel this user is a member of
+     * @readonly
+     * @returns{ChannelHandler[]} for every channel a handler that offers channel functionality
+     * */
+    get channels(){
+        return this._channels;
+    }
+
+    /**
+     * get the id of this client (the one, you use on the server as identifier and )
+     * @readonly
+     * @returns {string} the id of this client or null, if the client is not authenticated
+     * */
+    get id(){
+        return this._id;
+    }
+
 
     _messagehandler(message) {
         if (message.channel === Message.Addresses.ALL) {
-            this.channels.forEach(channel => channel._messagehandler(message));
+            this._channels
+                .filter(c => c.member(message.sender))
+                .forEach(channel => channel._messagehandler(message));
         }else{
             const channel = this.channel(message.channel);
             if (channel) channel._messagehandler(message);
@@ -48,7 +69,7 @@ class ClientHandler extends Listenable() {
         const channel = this.channel(name);
         if(channel) return;
         if("SUCCESS" !== await this.request('join', name)) throw new Error("INVALID");
-        this.channels.push(new Channel(name, this));
+        this._channels.push(new Channel(name, this));
     }
 
     /**
@@ -59,7 +80,7 @@ class ClientHandler extends Listenable() {
         const channel = this.channel(name);
         if(!channel) return;
         if("SUCCESS" !== await this.request('leave', name)) throw new Error("INVALID");
-        this.channels = this.channels.filter(c => c.name === name);
+        this._channels = this._channels.filter(c => c.name === name);
     }
 
     /**
@@ -70,7 +91,7 @@ class ClientHandler extends Listenable() {
         const channel = this.channel(name);
         if(channel) return;
         if("SUCCESS" !== await this.request('create', name)) throw new Error("INVALID");
-        this.channels.push(channel);
+        this._channels.push(channel);
     }
 
     /**
@@ -78,13 +99,13 @@ class ClientHandler extends Listenable() {
      * @returns Channel the channel with the id or null, if there is no such channel
      * */
     channel(id) {
-        const i = this.channels.findIndex(channel => channel.id === id);
-        return i >= 0 ? this.channels[i] : null;
+        const i = this._channels.findIndex(channel => channel.id === id);
+        return i >= 0 ? this._channels[i] : null;
     }
 
     request(type, content, maxtime=5000){
         return new Promise((resolve, reject) => {
-            const msg = new Message().withType(type).withContent(content).withSender(this.id).withReceiver(Message.Addresses.SERVER);
+            const msg = new Message().withType(type).withContent(content).withSender(this._id).withReceiver(Message.Addresses.SERVER);
             this.send(msg);
             const timeout = setTimeout(() => {
                 clearTimeout(timeout);
@@ -107,8 +128,8 @@ class ClientHandler extends Listenable() {
                 content: arguments[1]
             });
         }
-        if(!message._sender) message = message.withSender(this.id);
-        this.socket.send(JSON.stringify(message.asDataObject()));
+        if(!message._sender) message = message.withSender(this._id);
+        this._socket.send(JSON.stringify(message.asDataObject()));
     }
 
 }

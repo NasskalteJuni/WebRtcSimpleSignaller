@@ -51,7 +51,7 @@ If you want to quickly get a grasp about who receives which messages, you can us
 |-----------:|:--------------:|:-------------------------------------------------:|:-----------------------|
 |UserB       |    ChannelA    |    UserB                                          | UserA                  |
 |ALL         |    ChannelA    |    Every User in ChannelA except UserA            | UserA                  |
-|ALL         |    ALL         |    Every User in every Channel of UserA except A  | UserA                  |
+|ALL         |    ALL         |    Every User in every Channel of UserA except A  | UserA in Channels of A |
 |UserB       |    ALL         |    UserB                                          | UserA in Channels of A |
 
 ### Advanced Message handling

@@ -17,7 +17,7 @@ test.beforeEach(t => {
     //bypass auth and just set the id
     t.context.client._id = "member_self";
     // stub the websocket to avoid connection errors
-    t.context.client.socket = sinon.stub(t.context.client.socket);
+    t.context.client._socket = sinon.stub(t.context.client._socket);
     // just act like these have been added/created already
     t.context.testChannel1 = new Channel("test_channel_1", t.context.client);
     t.context.testChannel2 = new Channel("test_channel_2", t.context.client);
@@ -26,8 +26,8 @@ test.beforeEach(t => {
     t.context.testMember2 = new Member("member_2", t.context.testChannel2);
     t.context.testMember3 = new Member("member_3", t.context.testChannel2);
     t.context.testMember2Channel3 = new Member("member_2", t.context.testChannel3);
-    t.context.client.channels.push(t.context.testChannel1);
-    t.context.client.channels.push(t.context.testChannel2);
+    t.context.client._channels.push(t.context.testChannel1);
+    t.context.client._channels.push(t.context.testChannel2);
     t.context.testChannel1.members.push(t.context.testMember1);
     t.context.testChannel2.members.push(t.context.testMember2);
     t.context.testChannel2.members.push(t.context.testMember3);

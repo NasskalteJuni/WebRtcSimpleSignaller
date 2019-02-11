@@ -21,12 +21,8 @@ class ChannelHandler extends Listenable(){
     }
 
     _messagehandler(message) {
-        if(message._receiver === Message.Addresses.ALL){
-            this.members.forEach(member => member._messagehandler(message));
-        }else{
-            const member = this.member(message._receiver);
-            if (member) member._messagehandler(message);
-        }
+        const member = this.member(message._receiver);
+        if (member) member._messagehandler(message);
         this.trigger(message.type, [message.content, message]);
     }
 

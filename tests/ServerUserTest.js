@@ -46,8 +46,8 @@ test('A new instance of a user is created by passing in its id and its Websocket
 });
 
 test('The User Object is immutable and disallows direct manipulation of .id and .socket', t => {
-    t.throws(() => t.context.unauthenticatedDummy.id = "2");
-    t.throws(() => t.context.unauthenticatedDummy.socket = null);
+    t.throws(() => t.context.unauthenticatedDummy._id = "2");
+    t.throws(() => t.context.unauthenticatedDummy._socket = null);
 });
 
 test('calling the immutable withId and withSocket methods creates a new, but matching Object', t => {
