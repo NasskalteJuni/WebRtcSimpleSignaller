@@ -31,7 +31,7 @@ test.beforeEach(t => {
     testChannel2.members.push(testMember3);
 });
 
-test.afterEach(t => {
+test.afterEach.always(t => {
     t.context.client._socket.send.restore();
 });
 

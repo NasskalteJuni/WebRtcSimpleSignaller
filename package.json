@@ -7,8 +7,20 @@
   "scripts": {
     "demo": "node example/app/app.js",
     "doc": "./node_modules/.bin/jsdoc ./src -r --destination ./docs --readme ./README.md",
-    "test": "ava --verbose tests/*.js",
+    "test": "ava",
     "build": "node ./build/build.js"
+  },
+  "ava": {
+    "files": [
+      "./tests/**/*.js"
+    ],
+    "sources": [
+      "./src/**/*.js"
+    ],
+    "failFast": false,
+    "tap": false,
+    "verbose": true,
+    "serial": true
   },
   "keywords": [
     "signaller",
