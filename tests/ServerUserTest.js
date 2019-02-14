@@ -1,112 +1,120 @@
-// /**
-//  * Very superficial tests that do not cover the functions in depth,
-//  * but hopefully guarantee basic functionality
-//  * @author nasskaltejuni
-//  * */
-// const test = require('ava');
-// const User = require('../src/Server/User');
-// const Channel = require('../src/Server/Channel');
-//
-// test.before(t => {
-//     // generate dummies and a few utility functions for the text context
-//     t.context.fakeWebSocket = () => ({socketid: Math.random().toString(32).substr(2)});
-//     t.context.unauthenticatedDummyId = "1";
-//     t.context.unauthenticatedDummySocket = t.context.fakeWebSocket();
-//     t.context.unauthenticatedDummy = new User(t.context.unauthenticatedDummyId, t.context.unauthenticatedDummySocket);
-//     t.context.authenticatedDummyId = "2";
-//     t.context.authenticatedDummySocket = t.context.fakeWebSocket();
-//     t.context.authenticatedDummy = new User(t.context.authenticatedDummyId, t.context.authenticatedDummySocket);
-//     t.context.testChannelId = "test";
-//     t.context.testChannel = new Channel(t.context.testChannelId, []);
-// });
-//
-// test.beforeEach(t => {
-//     // bring everything in the correct state
-//     User.unauthenticate(t.context.unauthenticatedDummy);
-//     User.authenticate(t.context.authenticatedDummy);
-//     Channel.open(t.context.testChannel)
-// });
-//
-// test.afterEach(t => {
-//     // clean up the dummies
-//     User.all.forEach(user => User.unauthenticate(user)); // disconnect possible new users
-//     User.authenticate(t.context.authenticatedDummy); // authenticate the dummy for authenticated
-// });
-//
-// test('Authenticated users are part of User.all', t =>{
-//     t.true(User.all.findIndex(user => user.id === t.context.authenticatedDummyId) !== -1);
-// });
-//
-// test('Unauthenticated users are not part of User.all', t =>{
-//     t.true(User.all.findIndex(user => user.id === t.context.unauthenticatedDummyId) === -1);
-// });
-//
-// test('A new instance of a user is created by passing in its id and its Websocket', t => {
-//     t.true(t.context.unauthenticatedDummy.id === t.context.unauthenticatedDummyId && t.context.unauthenticatedDummy.socket === t.context.unauthenticatedDummySocket);
-// });
-//
-// test('The User Object is immutable and disallows direct manipulation of .id and .socket', t => {
-//     t.throws(() => t.context.unauthenticatedDummy._id = "2");
-//     t.throws(() => t.context.unauthenticatedDummy._socket = null);
-// });
-//
-// test('calling the immutable withId and withSocket methods creates a new, but matching Object', t => {
-//     const original = t.context.unauthenticatedDummy;
-//     const newly = original.withId("2").withSocket(null);
-//     t.true(original !== newly && newly.id === "2" && newly.socket === null);
-//     t.true(original.id !== newly.id);
-// });
-//
-// test('An authenticated User can be retrieved by its id', t =>{
-//     t.true(User.byId(t.context.authenticatedDummyId).id === t.context.authenticatedDummyId);
-// });
-//
-// test('An unauthenticated User cannot be retrieved by its id (since unautenticated users dont exist on this realm)', t => {
-//     t.true(User.byId(t.context.unauthenticatedDummyId) === null);
-// });
-//
-// // everything changing global state must be serial!
-// test.serial('just creating a user does not add it to the list of authenticated users but calling authenticate does', t => {
-//     const testId = "3";
-//     const unauthenticated = new User(testId, t.context.fakeWebSocket());
-//     t.true(User.byId(testId) === null);
-//     User.authenticate(unauthenticated);
-//     t.true(User.byId(testId) !== null);
-//     User.unauthenticate(unauthenticated);
-// });
-//
-// test.serial('calling the disconnect method removes the user from the list of authenticated users', t => {
-//     User.authenticate(t.context.unauthenticatedDummy);
-//     const numberOfAuthenticatedUsers = User.all.length;
-//     User.unauthenticate(t.context.unauthenticatedDummyId);
-//     t.true(User.all.length === numberOfAuthenticatedUsers-1);
-//     t.true(User.byId(t.context.unauthenticatedDummyId) === null);
-// });
-//
-// test.serial('getting a user by its socket works (for authenticated users)', t => {
-//     User.authenticate(t.context.authenticatedDummy);
-//     const foundForDummySocket = User.bySocket(t.context.authenticatedDummy.socket);
-//     t.true(foundForDummySocket !== null && foundForDummySocket.id === t.context.authenticatedDummyId);
-//     t.true(User.bySocket(t.context.fakeWebSocket()) === null);
-// });
-//
-// test('a user that did not join any channels has an empty array for .channels', t => {
-//     t.true(t.context.authenticatedDummy.channels.length === 0);
-// });
-//
-// test.serial('user joining channel adds the user as a member, leaving removes the user as member', t => {
-//     const currentMemberNumber = t.context.testChannel.members.length;
-//     t.context.authenticatedDummy.join(t.context.testChannelId);
-//     t.true(t.context.testChannel.members.length === currentMemberNumber+1 && t.context.testChannel.members.indexOf(t.context.authenticatedDummyId) !== -1);
-//     t.context.authenticatedDummy.leave(t.context.testChannelId);
-//     t.true(t.context.testChannel.members.length === currentMemberNumber);
-// });
-//
-// test('excluding a specific user works', t => {
-//     t.true(User.exclude([t.context.unauthenticatedDummy, t.context.authenticatedDummy], t.context.unauthenticatedDummyId).length === 1);
-// });
-//
-// test('filtering duplicate users works', t => {
-//     t.true(User.unique([t.context.unauthenticatedDummy, t.context.unauthenticatedDummy, t.context.authenticatedDummy]).length === 2);
-// });
-//
+const User = require('../src/Server/User');
+const Channel = require('../src/Server/Channel');
+
+const fakeWebSocket = () => ({socketid: Math.random().toString(32).substr(2)});
+const unauthenticatedDummyId = "1";
+const unauthenticatedDummySocket = fakeWebSocket();
+const unauthenticatedDummy = new User(unauthenticatedDummyId, unauthenticatedDummySocket);
+const authenticatedDummyId = "2";
+const authenticatedDummySocket = fakeWebSocket();
+const authenticatedDummy = new User(authenticatedDummyId, authenticatedDummySocket);
+
+
+beforeEach(t => {
+    // bring everything in the correct state
+    User.unauthenticate(unauthenticatedDummy);
+    User.authenticate(authenticatedDummy);
+});
+
+afterEach(t => {
+    // clean up the dummies
+    User.all.forEach(user => User.unauthenticate(user)); // disconnect possible new users
+    User.authenticate(authenticatedDummy); // authenticate the dummy for authenticated
+});
+
+describe("Users can be retrieved (read access) with a set of methods", () => {
+
+    test('Authenticated users are part of User.all', () => {
+        expect(User.all).toContain(authenticatedDummy);
+    });
+
+
+    test('A new instance of a user is created by passing in its id and its Websocket', () => {
+        expect(User.all).not.toContain(unauthenticatedDummy);
+    });
+
+    test('An authenticated User can be retrieved by its id', () =>{
+        expect(User.byId(authenticatedDummyId)).toBe(authenticatedDummy);
+    });
+
+    test('An unauthenticated User cannot be retrieved by its id (since unautenticated users dont exist on this realm)', () => {
+        expect(User.byId(unauthenticatedDummyId)).toBeNull();
+    });
+
+    test('getting a user by its socket works (for authenticated users)', () => {
+        expect(User.bySocket(authenticatedDummySocket)).toBe(authenticatedDummy);
+    });
+
+    test('getting a user by a new (not-known) socket returns null', () => {
+        expect(User.bySocket(fakeWebSocket())).toBeNull();
+    });
+});
+
+describe("User utility functions work", () => {
+    test('excluding a specific user works', () => {
+        const excluded = User.exclude([unauthenticatedDummy, authenticatedDummy], unauthenticatedDummyId);
+        expect(excluded).toContain(authenticatedDummy);
+        expect(excluded).not.toContain(unauthenticatedDummy);
+    });
+
+    test('filtering duplicate users works', t => {
+        const unique = User.unique([unauthenticatedDummy, unauthenticatedDummy, authenticatedDummy]);
+        expect(unique).toContain(unauthenticatedDummy);
+        expect(unique).toContain(authenticatedDummy);
+        expect(unique.length).toBe(2);
+    });
+});
+
+describe("The User Object is immutable and throws an Error in strict mode", () => {
+    "use strict";
+
+    test('The User Object is immutable and disallows direct manipulation of .id and .socket', () => {
+        expect(() => unauthenticatedDummy.id = "2").toThrowError();
+        expect(() => unauthenticatedDummy.socket = null).toThrowError();
+    });
+
+    test('calling the immutable withId and withSocket methods creates a new, but matching Object', t => {
+        const original = unauthenticatedDummy;
+        const newly = original.withId("2").withSocket(null);
+        expect(original).not.toBe(newly);
+        expect(newly.id).toBe("2");
+        expect(newly.socket).toBeNull();
+        expect(newly.id).not.toBe(original.id);
+    });
+});
+
+
+describe("authentication and deauthentication works as expected", () => {
+
+    test('just creating a user does not add it to the list of authenticated users but calling authenticate does', () => {
+        const testId = "3";
+        new User(testId, fakeWebSocket());
+        expect(User.byId(testId)).toBeNull();
+        User.authenticate(unauthenticated);
+        t.true(User.byId(testId) !== null);
+        User.unauthenticate(unauthenticated);
+    });
+
+    test('calling authenticate on an unauthenticated user adds the user to the tracked users', () => {
+        const testId = "3";
+        (new User(testId, fakeWebSocket())).authenticate();
+        expect(User.byId(testId)).not.toBeNull();
+    });
+
+    test('calling authenticate multiple times is no different than once and throws no error', () => {
+        authenticatedDummy.authenticate();
+        expect(() => authenticatedDummy.authenticate()).not.toThrowError();
+        expect(User.byId(authenticatedDummyId)).not.toBeNull();
+    });
+
+    test('calling unauthenticate removes a user from the list of tracked users', () => {
+        authenticatedDummy.unauthenticate();
+        expect(User.byId(authenticatedDummyId)).toBeNull();
+    });
+
+    test('calling unauthenticate multiple times does not behave different than calling it only once', () => {
+        unauthenticatedDummy.unauthenticate();
+        expect(() => unauthenticatedDummy.unauthenticate()).not.toThrowError();
+        expect(() => User.byId(unauthenticatedDummy).toBeNull())
+    });
+});
