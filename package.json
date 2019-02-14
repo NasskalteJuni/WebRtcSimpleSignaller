@@ -7,20 +7,8 @@
   "scripts": {
     "demo": "node example/app/app.js",
     "doc": "./node_modules/.bin/jsdoc ./src -r --destination ./docs --readme ./README.md",
-    "test": "ava",
+    "test": "jest",
     "build": "node ./build/build.js"
-  },
-  "ava": {
-    "files": [
-      "./tests/**/*.js"
-    ],
-    "sources": [
-      "./src/**/*.js"
-    ],
-    "failFast": false,
-    "tap": false,
-    "verbose": true,
-    "serial": true
   },
   "keywords": [
     "signaller",
@@ -34,13 +22,12 @@
     "ws": "^6.1.2"
   },
   "devDependencies": {
-    "ava": "^1.1.0",
+    "jest": "^24.1.0",
     "jsdoc": "^3.5.5",
     "puppeteer": "^1.12.1",
     "rollup": "^1.1.2",
     "rollup-plugin-babel": "^4.3.2",
     "rollup-plugin-commonjs": "^9.2.0",
-    "rollup-plugin-node-resolve": "^4.0.0",
-    "sinon": "^7.2.3"
+    "rollup-plugin-node-resolve": "^4.0.0"
   }
 }

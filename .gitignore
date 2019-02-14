@@ -1,6 +1,7 @@
 # Temporary files (like swap-files or similar)
 *.tmp
 .*.sw?
+tmp/
 
 # IDE related configuration files (to avoid overwriting someones editor config)
 .idea/

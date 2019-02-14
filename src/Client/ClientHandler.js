@@ -1,7 +1,6 @@
 const Listenable = require("../Utils/Listenable");
 const Message = require("../Utils/Message");
 const Channel = require("./ChannelHandler");
-const WebSocket = require("ws");
 
 class ClientHandler extends Listenable() {
 
@@ -21,10 +20,10 @@ class ClientHandler extends Listenable() {
     /**
      * get every channel this user is a member of
      * @readonly
-     * @returns{ChannelHandler[]} for every channel a handler that offers channel functionality
+     * @returns{ReadonlyArray} for every channel a handler that offers channel functionality
      * */
     get channels(){
-        return this._channels;
+        return Object.freeze(this._channels);
     }
 
     /**
@@ -128,7 +127,9 @@ class ClientHandler extends Listenable() {
                 content: arguments[1]
             });
         }
-        if(!message._sender) message = message.withSender(this._id);
+        if(!message.sender) message = message.withSender(this._id);
+        if(!message.channel) message = message.withChannel(Message.Addresses.ALL);
+        if(!message.receiver) message = message.withReceiver(Message.Addresses.ALL);
         this._socket.send(JSON.stringify(message.asDataObject()));
     }
 

@@ -31,6 +31,7 @@ const Listenable = (superclass=Object) => class extends superclass{
      * @instance
      * */
     on(event, handler){
+        if(typeof event !== "string") throw new TypeError("Invalid Event type given:"+type+" ["+(typeof event)+"]");
         if(typeof handler !== "function") throw new Error("Invalid Handler function given:"+handler+" ["+(typeof handler)+"]");
         this._handlers[event] = this.hasListenerFor(event) ? this._handlers[event].concat([handler]) : [handler];
     }
@@ -43,7 +44,8 @@ const Listenable = (superclass=Object) => class extends superclass{
      * @instance
      * */
     off(event, handler){
-        if(typeof handler !== "function") throw new Error("Invalid Handler function given:"+handler+" ["+(typeof handler)+"]");
+        if(typeof event !== "string") throw new TypeError("Invalid Event type given:"+type+" ["+(typeof event)+"]");
+        if(typeof handler !== "function") throw new TypeError("Invalid Handler function given:"+handler+" ["+(typeof handler)+"]");
         if(this.hasListenerFor(event)) this._handlers[event] = this._handlers[event].filter(h => h.toString() === handler.toString())
     }
 

@@ -1,70 +1,79 @@
-/**
- * Very superficial tests that do not cover the functions in depth,
- * but hopefully guarantee basic functionality
- * @author nasskaltejuni
- * */
-// test functionality dependencies
-const test = require("ava");
-const sinon = require("sinon");
-// custom components used or up for test
 const Signaller = require("../src/Client/ClientHandler");
 const Channel = require("../src/Client/ChannelHandler");
 const Member = require("../src/Client/MemberHandler");
 const Message = require("../src/Utils/Message");
+const onSendFn = jest.fn();
+const client = new Signaller("wss://localhost/");
+client._socket = {send: (msg) => onSendFn(JSON.parse(msg))};
+client._id = 'testclient';
 
-test.beforeEach(t => {
-    t.context.client = new Signaller("wss://example.com");
-    //bypass auth and just set the id
-    t.context.client._id = "member_self";
-    // stub every method on the websocket (including send) and prevent default socket behaviour (like connecting)
-    t.context.client._socket = sinon.stub(t.context.client._socket);
-    // just act like these have been added/created already
-    const testChannel1 = new Channel("test_channel_1", t.context.client);
-    const testChannel2 = new Channel("test_channel_2", t.context.client);
-    const testMember1 = new Member("member_1", testChannel1);
-    const testMember2 = new Member("member_2", testChannel2);
-    const testMember3 = new Member("member_3", testChannel2);
-    t.context.client._channels.push(testChannel1);
-    t.context.client._channels.push(testChannel2);
-    testChannel1.members.push(testMember1);
-    testChannel2.members.push(testMember2);
-    testChannel2.members.push(testMember3);
+
+beforeEach(() => {
+    // structrue:
+    // - c1: (m1, m2, m3)
+    // - c2: (m2, m3)
+    // - c3: (m3)
+    const c1 = new Channel('c1', client);
+    c1._members.push(new Member('m1', c1), new Member('m2', c1), new Member('m3', c1));
+    const c2 = new Channel('c2', client);
+    c2._members.push(new Member('m2', c2), new Member('m3', c2));
+    const c3 = new Channel('c3', client);
+    c3._members.push(new Member('m3', c3));
+    client._channels.push(c1, c2, c3);
 });
 
-test.afterEach.always(t => {
-    t.context.client._socket.send.restore();
+afterEach(() => {
+    jest.restoreAllMocks();
+    client._channels = [];
 });
 
-// basic sending functionality creates messages as expected
+describe("Sending messages on members, channels or the client by passing type and content constructs messages as expected", () => {
 
-test("Sending a message on a member of a _channel creates a message specifically for that member in that _channel", t => {
-    t.context.client.channel("test_channel_2").member("member_3").send("test","content");
-    const msg = new Message(JSON.parse(t.context.client._socket.send.args[0]));
-    t.true(msg.receiver === "member_3" && msg.channel === "test_channel_2");
+    test("Sending a message on a member in a channel constructs a message for this client in this channel", () => {
+        client.channel("c1").member("m1").send("t","c");
+        expect(onSendFn).toBeCalledWith(expect.objectContaining({channel: 'c1', receiver: 'm1', sender: 'testclient', type:'t', content: 'c'}));
+    });
+
+    test("Sending a message on a channel constructs a message for this channels (broadcast)", () => {
+        client.channel("c1").send("t","c");
+        expect(onSendFn).toBeCalledWith(expect.objectContaining({channel: 'c1', receiver: Message.Addresses.ALL, sender: 'testclient', type: 't', content: 'c'}));
+    });
+
+    test("Sending a message on the client constructs a message from this user and to all channels he knows as broadcast", () => {
+        client.send("t","c");
+        expect(onSendFn).toBeCalledWith(expect.objectContaining({sender: 'testclient', channel: Message.Addresses.ALL, receiver: Message.Addresses.ALL}))
+    });
 });
 
+describe("Passing in a message object to the send function adds data based on the used handler, but not overrides given data", () => {
 
-test("sending a message over a _channel by (type, content) acts as broadcast", t => {
-    t.context.client.channel("test_channel_2").send("test","content");
-    const msg = new Message(JSON.parse(t.context.client._socket.send.args[0]));
-    t.true(msg.receiver === Message.ALL && msg.channel === "test_channel_2");
-});
+    test("Sending a message on a member handler in a channel adds the members id as receiver, the channel as channel, the client as sender", () => {
+        client.channel("c1").member("m1").send(new Message());
+        expect(onSendFn).toBeCalledWith(expect.objectContaining({channel: 'c1', receiver: 'm1', sender: 'testclient'}));
+    });
 
+    test("Sending a message on a member handler in a channel does not overwrite given data", () => {
+        client.channel("c1").member("m1").send(new Message({channel: 'c2', receiver: 'm2', sender: 'notTestClient'}));
+        expect(onSendFn).toBeCalledWith(expect.objectContaining({channel: 'c2', receiver: 'm2', sender: 'notTestClient'}));
+    });
 
-test("using send on a _channel by passing a message just acts as send without changing given sender and receiver", t => {
-    t.context.client.channel("test_channel_2").send(new Message({receiver: "test-receiver", sender: "test-sender"}));
-    const msg = new Message(JSON.parse(t.context.client._socket.send.args[0]));
-    t.true(msg.receiver === "test-receiver" && msg.sender === "test-sender")
-});
+    test("Sending a message on a channel handler works as broadcast for that channel", () => {
+        client.channel("c1").send(new Message());
+        expect(onSendFn).toBeCalledWith(expect.objectContaining({channel: 'c1', receiver: Message.Addresses.ALL, sender: 'testclient'}));
+    });
 
-test("using send on a member by passing a message just acts as send without changing given sender and receiver", t => {
-    t.context.client.channel("test_channel_2").member("member_3").send(new Message({receiver: "test-receiver", sender: "test-sender"}));
-    const msg = new Message(JSON.parse(t.context.client._socket.send.args[0]));
-    t.true(msg.receiver === "test-receiver" && msg.sender === "test-sender")
-});
+    test("Sending a message on a channel does not overwrite given data", () => {
+        client.channel("c1").send(new Message({channel: 'c2', receiver: 'c2', sender: 'notTestClient'}));
+        expect(onSendFn).toBeCalledWith(expect.objectContaining({channel: 'c2', receiver: 'c2', sender: 'notTestClient'}));
+    });
 
-test("using send by passing in a message with lacking _channel and member adds those attributes", t => {
-    t.context.client.channel("test_channel_2").member("member_3").send(new Message({type: "test", content: "content"}));
-    const msg = new Message(JSON.parse(t.context.client._socket.send.args[0]));
-    t.true(msg.receiver === "member_3" && msg.channel === "test_channel_2");
+    test("Sending a message on the client handler adds as broadcast for every known channel", () => {
+        client.send(new Message());
+        expect(onSendFn).toBeCalledWith(expect.objectContaining({sender: 'testclient', channel: Message.Addresses.ALL, receiver: Message.Addresses.ALL}));
+    });
+
+    test("Sending a message on the client handler does not overwrite given data", () => {
+        client.send(new Message({channel: 'c1', receiver: 'm1', sender: 'notTestClient'}));
+        expect(onSendFn).toBeCalledWith(expect.objectContaining({sender: 'notTestClient', channel: 'c1', receiver: 'm1'}));
+    });
 });

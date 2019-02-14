@@ -1,101 +1,84 @@
-/**
- * Very superficial tests that do not cover the functions in depth,
- * but hopefully guarantee basic functionality
- * @author nasskaltejuni
- * */
-const test = require("ava");
-const sinon = require("sinon");
 const Signaller = require("../src/Client/ClientHandler");
 const Channel = require("../src/Client/ChannelHandler");
 const Member = require("../src/Client/MemberHandler");
 const Message = require("../src/Utils/Message");
+const client = new Signaller("wss://localhost/");
+const receiveMsg = (msg) => client._messagehandler(msg);
 
-
-test.beforeEach(t => {
-    // mock a few expected things...
-    t.context.client = new Signaller("wss://localhost");
-    //bypass auth and just set the id
-    t.context.client._id = "member_self";
-    // stub the websocket to avoid connection errors
-    t.context.client._socket = sinon.stub(t.context.client._socket);
-    // just act like these have been added/created already
-    t.context.testChannel1 = new Channel("test_channel_1", t.context.client);
-    t.context.testChannel2 = new Channel("test_channel_2", t.context.client);
-    t.context.testChannel3 = new Channel("test_channel_3", t.context.client);
-    t.context.testMember1 = new Member("member_1", t.context.testChannel1);
-    t.context.testMember2 = new Member("member_2", t.context.testChannel2);
-    t.context.testMember3 = new Member("member_3", t.context.testChannel2);
-    t.context.testMember2Channel3 = new Member("member_2", t.context.testChannel3);
-    t.context.client._channels.push(t.context.testChannel1);
-    t.context.client._channels.push(t.context.testChannel2);
-    t.context.testChannel1.members.push(t.context.testMember1);
-    t.context.testChannel2.members.push(t.context.testMember2);
-    t.context.testChannel2.members.push(t.context.testMember3);
-    t.context.testChannel3.members.push(t.context.testMember2Channel3);
-    t.context.message = (channel, sender, receiver) => t.context.client._messagehandler(new Message({channel, sender, receiver, type: "test", content: "example"}))
+beforeEach(() => {
+    global.WebSocket = {send: jest.fn()};
+    // structrue:
+    // - c1: (m1, m2, m3)
+    // - c2: (m2, m3)
+    // - c3: (m3)
+    const c1 = new Channel('c1', client);
+    c1._members.push(new Member('m1', c1), new Member('m2', c1), new Member('m3', c1));
+    const c2 = new Channel('c2', client);
+    c2._members.push(new Member('m2', c2), new Member('m3', c2));
+    const c3 = new Channel('c3', client);
+    c3._members.push(new Member('m3', c3));
+    client._channels.push(c1, c2, c3);
 });
 
-test("Client hands incoming messages to specific sending member correctly and triggers handle on member", t => {
-    const sender = t.context.testMember1.id;
-    const channel = t.context.testChannel1.id;
-    t.context.client
-        .channel(channel)
-        .member(sender)
-        .on("test", content => content === "example" ? t.pass("member received valid message") : t.fail("Invalid message content"));
-    t.context.message(channel, sender, sender);
+afterEach(() => {
+    jest.restoreAllMocks();
+    client._channels = [];
+    delete global["WebSocket"];
 });
 
-test("Client hands incoming messages to correct member (the sender and not the receiver, identifying the receiver is done on the server)", t => {
-    t.context.client
-        .channel("test_channel_2")
-        .member("member_2")
-        .on("test", ()=> t.true("triggered on sender"));
-    t.context.client
-        .channel("test_channel_2")
-        .member("member_3")
-        .on("test", ()=> t.fail("triggered on receiver"));
-    t.context.message("test_channel_2", "member_2", "member_3")
+describe("Receiving a message triggers handlers with type and content", () => {
+
+    test("member handler triggers on message with valid content (and the message)", () => {
+        const receivedCb = jest.fn();
+        client.channel('c1').member('m1').on('t', receivedCb);
+        receiveMsg(new Message({type: 't', content: 'c', sender: 'm1', receiver: 'm1', channel: 'c1'}));
+        expect(receivedCb).toBeCalledWith('c', expect.any(Message));
+    });
+
+    test("channel handler triggers on message with valid content (and the message)", () => {
+        const receivedCb = jest.fn();
+        client.channel('c1').on('t', receivedCb);
+        receiveMsg(new Message({type: 't', content: 'c', sender: 'm1', receiver: 'm1', channel: 'c1'}));
+        expect(receivedCb).toBeCalledWith('c', expect.any(Message));
+    });
+
+    test("correct handler triggers once", () => {
+        const receivedCb = jest.fn();
+        client.channel('c1').member('m1').on('t', receivedCb);
+        receiveMsg(new Message({type: 't', content: 'c', sender: 'm1', channel: 'c1', receiver: 'm2'}));
+        expect(receivedCb).toHaveBeenCalledTimes(1);
+    });
+
+    test("incorrect handler does not trigger", () => {
+        const receivedCb = jest.fn();
+        client.channel('c1').member('m1').on('K', receivedCb);
+        expect(receivedCb).not.toHaveBeenCalled();
+    })
+
 });
 
-test("receiving a message from a sender in a specific channel triggers also the channel the sender is part of", t => {
-    t.context.client
-        .channel("test_channel_1")
-        .on("test", () => t.pass("_channel triggered"));
-    t.context.message("test_channel_1", "member_1", "member_1");
+describe("client triggers ONLY ON CORRECT MEMBERS and channels and not always on all / randomly", () => {
+    test("invalid member does not trigger", done => {
+        client.channel("c1").member("m2").on('t', () => done.fail("Invalid member"));
+        client.channel("c1").member("m3").on('t', () => done.fail("Invalid member, triggered on receiver instead!"));
+        receiveMsg(new Message({type: 't', content: 'c', sender: 'm1', receiver: 'm3', channel: 'c1'}));
+        done();
+    });
+
+    test("invalid channel (receiver is not member of channel) does not get triggered", done => {
+        client.channel("c3").on('t', () => done.fail("Invalid channel, sender is not part of c3"));
+        receiveMsg(new Message({type: 't', content: 'c', sender: 'm1', receiver: 'm2'}));
+        done();
+    });
 });
 
-test("Client hands incoming message from a specific member correctly and does NOT trigger on other members in channel", t => {
-    t.context.client
-        .channel("test_channel_2")
-        .member("member_3")
-        .on("test", () => t.fail("Invalid member got message"));
-    t.context.client
-        .channel("test_channel_2")
-        .member("member_2")
-        .on("test", () => t.pass("Valid member got message"));
-    t.context.message("test_channel_2", "member_2", "member_2");
-});
+describe("Messages are received on EVERY handler that match the sender", () => {
 
-test.cb("receiving a message to broadcast (Message.Addresses.ALL) for a specific channel still only triggers for the sender", t => {
-    const sender = t.context.testMember3;
-    const channel = t.context.testChannel2.id;
-    t.context.client
-        .channel(channel)
-        .member(sender)
-        .on('test', () => t.pass("triggered on sender"));
-    t.context.message(channel, sender, Message.Addresses.ALL);
-});
-
-
-test.cb("receiving a message with Message.Addresses.ALL as channel triggers on each sender handler in each channel the sender is part of", t => {
-    const receivers = [];
-    const markAsReceiver = member => {
-        receivers.push(member);
-        console.log('triggered member', member);
-        if(receivers.length === 2) t.end();
-    };
-    const sender = "member_2";
-    t.context.client.channel(t.context.testChannel2.id).member(sender).on("test", () => markAsReceiver('channel 2'));
-    t.context.client.channel(t.context.testChannel3.id).member(sender).on("test", () => markAsReceiver('channel 3'));
-    t.context.message(Message.Addresses.ALL, sender, Message.Addresses.ALL);
+    test("Message from sender in ALL channels triggers on sender handler in every channel of sender", () => {
+        const validCbs = jest.fn();
+        client.channel('c1').member('m2').on('t', validCbs);
+        client.channel('c2').member('m2').on('t', validCbs);
+        receiveMsg(new Message({type: 't', content: 'c', sender: 'm2', receiver: 'm3', channel: Message.Addresses.ALL}));
+        expect(validCbs.mock.calls.length).toBe(2);
+    });
 });

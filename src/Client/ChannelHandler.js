@@ -14,14 +14,18 @@ class ChannelHandler extends Listenable(){
         super();
         this.id = id;
         this.client = client;
-        this.members = [];
-        this.on(Message.Types.CHANNEL, list => this.members = list.map(m => new Member(m, this.id)));
-        this.on(Message.Types.JOIN, m => this.members.push(new Member(m, this.id)));
-        this.on(Message.Types.LEAVE, m => this.members = this.members.filter(member => member.id !== m));
+        this._members = [];
+        this.on(Message.Types.CHANNEL, list => this._members = list.map(m => new Member(m, this.id)));
+        this.on(Message.Types.JOIN, m => this._members.push(new Member(m, this.id)));
+        this.on(Message.Types.LEAVE, m => this._members = this._members.filter(member => member.id !== m));
+    }
+
+    get members(){
+        return Object.freeze(this._members);
     }
 
     _messagehandler(message) {
-        const member = this.member(message._receiver);
+        const member = this.member(message.sender);
         if (member) member._messagehandler(message);
         this.trigger(message.type, [message.content, message]);
     }
@@ -31,8 +35,8 @@ class ChannelHandler extends Listenable(){
      * @returns Member with the given id or null, if no member with such id is present
      * */
     member(id){
-        const i = this.members.findIndex(member => member.id === id);
-        return i >= 0 ? this.members[i] : null;
+        const i = this._members.findIndex(member => member.id === id);
+        return i >= 0 ? this._members[i] : null;
     }
 
     /**
@@ -48,7 +52,7 @@ class ChannelHandler extends Listenable(){
                 content: arguments[1]
             });
         }
-        if(!message.receiver) message = message.withReceiver(Message.ALL);
+        if(!message.receiver) message = message.withReceiver(Message.Addresses.ALL);
         if(!message.channel) message = message.withChannel(this.id);
         this.client.send(message);
     };

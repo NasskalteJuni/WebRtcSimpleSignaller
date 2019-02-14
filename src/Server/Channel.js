@@ -127,7 +127,7 @@ class Channel{
      * */
     static byMember(user){
         const id = user.id || user;
-        return channels.filter(channel => channel.members.indexOf(id) >= 0);
+        return channels.filter(channel => channel._members.indexOf(id) >= 0);
     }
 
     /**
