@@ -10,13 +10,13 @@ const authenticatedDummySocket = fakeWebSocket();
 const authenticatedDummy = new User(authenticatedDummyId, authenticatedDummySocket);
 
 
-beforeEach(t => {
+beforeEach(() => {
     // bring everything in the correct state
     User.unauthenticate(unauthenticatedDummy);
     User.authenticate(authenticatedDummy);
 });
 
-afterEach(t => {
+afterEach(() => {
     // clean up the dummies
     User.all.forEach(user => User.unauthenticate(user)); // disconnect possible new users
     User.authenticate(authenticatedDummy); // authenticate the dummy for authenticated
@@ -57,7 +57,7 @@ describe("User utility functions work", () => {
         expect(excluded).not.toContain(unauthenticatedDummy);
     });
 
-    test('filtering duplicate users works', t => {
+    test('filtering duplicate users works', () => {
         const unique = User.unique([unauthenticatedDummy, unauthenticatedDummy, authenticatedDummy]);
         expect(unique).toContain(unauthenticatedDummy);
         expect(unique).toContain(authenticatedDummy);
@@ -73,7 +73,7 @@ describe("The User Object is immutable and throws an Error in strict mode", () =
         expect(() => unauthenticatedDummy.socket = null).toThrowError();
     });
 
-    test('calling the immutable withId and withSocket methods creates a new, but matching Object', t => {
+    test('calling the immutable withId and withSocket methods creates a new, but matching Object', () => {
         const original = unauthenticatedDummy;
         const newly = original.withId("2").withSocket(null);
         expect(original).not.toBe(newly);
@@ -90,9 +90,6 @@ describe("authentication and deauthentication works as expected", () => {
         const testId = "3";
         new User(testId, fakeWebSocket());
         expect(User.byId(testId)).toBeNull();
-        User.authenticate(unauthenticated);
-        t.true(User.byId(testId) !== null);
-        User.unauthenticate(unauthenticated);
     });
 
     test('calling authenticate on an unauthenticated user adds the user to the tracked users', () => {
@@ -117,4 +114,5 @@ describe("authentication and deauthentication works as expected", () => {
         expect(() => unauthenticatedDummy.unauthenticate()).not.toThrowError();
         expect(() => User.byId(unauthenticatedDummy).toBeNull())
     });
+
 });
