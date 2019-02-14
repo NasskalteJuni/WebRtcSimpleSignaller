@@ -202,6 +202,7 @@ class Message{
         return msg;
     }
 
+
     /**
      * Creates a simple Javascript Object that is not an instance of Message but shares all getters as fields.
      * This offers a way to quickly retrieve all current data without breaking immutability.
