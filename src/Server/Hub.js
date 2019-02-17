@@ -142,6 +142,7 @@ class Hub extends Listenable(){
         return Channel.close(channel);
     }
 
+
     /**
      * unauthenticates a user and informs its client about this
      * @param {string | User} user the user to unauthenticate

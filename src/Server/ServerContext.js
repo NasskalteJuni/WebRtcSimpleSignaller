@@ -134,7 +134,17 @@ class ServerContext{
      * */
     authenticate(id, socket=undefined){
         const user = this.user || new User(id, socket === undefined ? this.socket : socket);
-        return User.authenticate(user);
+        const notAlreadyAuthenticated = User.authenticate(user);
+        this.hub.sendOverSocket(this.socket, this.message.asAnswer().withContent({success: true}));
+        return notAlreadyAuthenticated;
+    }
+
+    /**
+     * react to an auth-request by sending a negative response, indicating that the authentication was not successful.
+     * @param {string} [error="INVALID"] - the reason for the failed authentication (Invalid credentials, unknown id, banned, etc.).
+     */
+    failAuthentication(error="INVALID"){
+        this.hub.sendOverSocket(this.socket, this.message.asAnswer().withContent({success: false, error}));
     }
 
     /**
@@ -151,7 +161,7 @@ class ServerContext{
 
     /**
      * get the User instance with the given id
-     * @param {string} id the id of the user
+     * @param {string} id - the id of the user
      * @returns {Object} the user object or null
      * */
     userById(id){
