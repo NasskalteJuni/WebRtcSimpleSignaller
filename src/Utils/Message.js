@@ -33,7 +33,12 @@ class Message{
     }
 
     /**
-     * allows to identify a message or an answer (message, where another member exchanged the content (and maybe type) and sent it back)
+     * Allows to identify a message. This is per default a string matching [a-z0-9]{11}.
+     * The id can be used to identify an answer to a message,
+     * since the <message>.answered-field contains the id of the original message.
+     * Be aware that the id is only unique, when a new message is created via new Message().
+     * The with<property>-methods do not change the id!
+     * This may allow to sent a Message with the same id multiple tines, but with different content.
      * @readonly
      * @returns {string} the message id
      * */
@@ -42,7 +47,11 @@ class Message{
     }
 
     /**
-     * identifies, which kind of content is being sent. A common example in WebRTC may be 'offer'
+     * identifies, which kind of content is being sent. A common example in WebRTC may be 'offer',
+     * but any other type is also acceptable. A programmer may use a type like 'ring' or 'rpcForSomething'.
+     * The only types which should be avoided are the predefined message types of the signaller.
+     * They can be found via Message.
+     * Types and one can check that a message is not a predefined Message via Message.Types.isCustomType
      * @readonly
      * @returns {string} the message type
      * */
@@ -52,10 +61,11 @@ class Message{
 
     /**
      * the raw data or message payload that you want to send to the client.
-     * Do not try to describe it in itself (@see Message.type).
-     * Can be a JS-Object, Array or everything else that can be sent as a string over the net
+     * Can be a JS-Object, Array or everything else that can be sent as a string over the net.
+     * Do not try to describe the content type inside a given content object if not necessary,
+     * for those kind of reasons the message object contains the type property.  (@see Message.type).
      * @readonly
-     * @returns {*} the data of the message
+     * @returns {*} the message data / payload of the message object
      * */
     get content(){
         return this._content;
@@ -63,6 +73,7 @@ class Message{
 
     /**
      * the id for the channel in which the message is being sent.
+     * This id equals the server side Channel Object id and the client side ChannelHandler id (@see Channel#id) (@see ChannelHandler#id).
      * @readonly
      * @returns {string} the channel id
      * */
@@ -71,7 +82,8 @@ class Message{
     }
 
     /**
-     * the id of the User that sent this message
+     * The id of the User that sent this message.
+     * This id equals the server side User Objects id and the client side MemberHandler id / Client id (@see User#id) (@see MemberHandler#id) (@see Client#id).
      * @readonly
      * @returns {string} the receiver id
      * */
@@ -81,6 +93,7 @@ class Message{
 
     /**
      * the id of the User that sent this message
+     * This id equals the server side User Objects id and the client side MemberHandler id / Client id (@see User#id) (@see MemberHandler#id) (@see Client#id).
      * @readonly
      * @returns {string} the sender id
      * */
@@ -89,16 +102,20 @@ class Message{
     }
 
     /**
-     * when was the message created and sent to the server. May be used to discard old messages on server
+     * when was the message created and sent to the server.
+     * This field may be used to discard old messages on server, avoid duplicate messages or order received messages.
+     * If this property is a string and not a Date, it has to be convertible to a date by calling new Date(string).
      * @readonly
-     * @returns {Date} the sending date
+     * @returns {string | Date} the sending date
      * */
     get sent(){
         return this._sent;
     }
 
     /**
-     * when was the message forwarded by the server.
+     * When was the message forwarded by the server.
+     * Can be used to discard old messages on the client.
+     * If this property is a string and not a Date, it has to be convertible to a date by calling new Date(string).
      * @readonly
      * @returns {Date} the forward date
      * */
@@ -107,7 +124,8 @@ class Message{
     }
 
     /**
-     * the id of the original Message that this Message is an answer to
+     * The id of the original Message to which this message is a reply to.
+     * (@see Message#id) for further informations
      * @readonly
      * @returns {string} the original message id
      * */
@@ -116,7 +134,8 @@ class Message{
     }
 
     /**
-     * Create a message like this one, but with the given Message type
+     * Create a message like this one, but with the given Message type instead.
+     * Use this immutable method instead of trying to set the Message id directly.
      * @param {string} type the message type
      * @returns {Message} copy of message with the given type
      * */
@@ -127,7 +146,8 @@ class Message{
     }
 
     /**
-     * Create a Message like this one, but with the given channel
+     * Create a Message like this one, but with the given channel instead.
+     * Use this immutable method instead of trying to set the channel directly.
      * @param {string} id a Channel id
      * @returns {Message} copy of message with given Channel id
      * */
@@ -138,7 +158,8 @@ class Message{
     }
 
     /**
-     * Create a Message like this one, but with the given Receiver
+     * Create a Message like this one, but with the given Receiver instead.
+     * Use this immutable method instead of trying to set the receiver directly.
      * @param {string} id a User id
      * @returns {Message} copy of message with given receiving User id
      * */
@@ -149,7 +170,8 @@ class Message{
     }
 
     /**
-     * Create a Message like this one, but with the given Sender
+     * Create a Message like this one, but with the given Sender instead.
+     * Use this immutable method instead of trying to set the sender directly.
      * @param {string} id a User id
      * @returns {Message} copy of message with given sending User id
      * */
@@ -160,7 +182,8 @@ class Message{
     }
 
     /**
-     * Create a Message like this but with the given content
+     * Create a Message like this but with the given content.
+     * Use this immutable method instead of trying to set the content directly.
      * @param {*} data any data payload of the message
      * @returns {Message} copy of message with given content data
      * */
