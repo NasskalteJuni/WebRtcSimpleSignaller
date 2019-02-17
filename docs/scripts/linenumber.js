@@ -16,7 +16,7 @@
         for (; i < totalLines; i++) {
             lineNumber++;
             lineId = 'line' + lineNumber;
-            lines[i]._id = lineId;
+            lines[i].id = lineId;
             if (lineId === anchorHash) {
                 lines[i].className += ' selected';
             }

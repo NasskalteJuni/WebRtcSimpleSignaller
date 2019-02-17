@@ -3,12 +3,14 @@ const Message = require("../Utils/Message.js");
 
 /**
  * A handler for incoming messages sent by a specific user or for sending messages to that specific
- * @implements Listenable
+ * @mixes Listenable
  * */
 class MemberHandler extends Listenable(){
 
     /**
-     * Creates a new Handler for incoming messages sent by the given user id
+     * Creates a new Handler for incoming messages sent by the given user id.
+     * Do not try to create new MemberHandler Objects by yourself in your application, this should be done by the client handler
+     * (which will react to changes in your application by getting updates about channel and user states from the server)
      * @param {string} id the User id of the sender
      * @param {ChannelHandler} channel the superordinate channel handler, of which this member is part of
      * */
@@ -25,6 +27,10 @@ class MemberHandler extends Listenable(){
      * */
     get id(){
         return this._id;
+    }
+
+    set id(v){
+        throw new TypeError("cannot set property id (readonly)");
     }
 
     /**

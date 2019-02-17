@@ -64,10 +64,10 @@ class User{
     /**
      * @static
      * every user added via User.add and not already removed via User.remove
-     * @returns {User[]} every user
+     * @returns {ReadonlyArray | User[]} every user
      * */
     static get all(){
-        return users;
+        return Object.freeze(users.slice());
     }
 
     /**
@@ -184,8 +184,7 @@ class User{
      * @returns {User[]}
      * */
     static unique(users){
-        console.log('input', users);
-        return ArrayTools.unique(users, (a,b) => a.id === b.id || console.log('compare',a, b));
+        return ArrayTools.unique(users, (a,b) => a.id === b.id);
     }
 
     /**

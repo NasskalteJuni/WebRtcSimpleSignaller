@@ -14,7 +14,7 @@ class Channel{
      * */
     constructor(id, members = []){
         this._id = id;
-        this._members = members;
+        this._members = Array.from(members);
     }
 
     /**
@@ -25,12 +25,20 @@ class Channel{
         return this._id;
     }
 
+    set id(v){
+        throw new TypeError("Cannot set property id (read only)");
+    }
+
     /**
      * @readonly
-     * @returns {string[]} the user ids as members of the channel
+     * @returns {ReadonlyArray} the user ids as members of the channel
      * */
     get members(){
-        return this._members;
+        return Object.freeze(this._members.slice());
+    }
+
+    set members(v){
+        throw new TypeError("cannot set property members (readonly)");
     }
 
     /**
@@ -46,7 +54,7 @@ class Channel{
      * @returns {Channel} a channel exactly like this, but with the given id
      * */
     withId(id){
-        return new Channel(id, this.members);
+        return new Channel(id, this._members);
     }
 
     /**
@@ -54,7 +62,7 @@ class Channel{
      * @returns {Channel} a channel exactly like this, but with the given members
      * */
     withMembers(members){
-        return new Channel(this.id, members);
+        return new Channel(this._id, members);
     }
 
     /**
@@ -63,8 +71,8 @@ class Channel{
      * @returns {boolean} true, if the user could join, false, if there was already a user with this id and nothing changed
      * */
     addMember(id){
-        const joinable = this.members.indexOf(id) === -1;
-        if(joinable) this.members.push(id);
+        const joinable = this._members.indexOf(id) === -1;
+        if(joinable) this._members.push(id);
         return joinable;
     }
 
@@ -74,9 +82,9 @@ class Channel{
      * @returns {boolean} true, if the user could leave, false, if there was no such user in this channel and nothing changed
      * */
     removeMember(id){
-        const i = this.members.indexOf(id);
+        const i = this._members.indexOf(id);
         const leaveable = i >= 0;
-        if(leaveable) this.members.splice(i, 1);
+        if(leaveable) this._members.splice(i, 1);
         return leaveable;
     }
 
@@ -92,10 +100,10 @@ class Channel{
     /**
      * @static
      * A list of all added channels
-     * @returns {Channel[]} every Channel that was added via Channel.add and not removed already via Channel.remove
+     * @returns {ReadonlyArray | Channel[]} every Channel that was added via Channel.add and not removed already via Channel.remove
      * */
     static get all(){
-        return channels;
+        return Object.freeze(channels.slice());
     }
 
     /**

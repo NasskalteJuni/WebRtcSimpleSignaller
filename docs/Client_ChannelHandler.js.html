@@ -35,36 +35,72 @@ const Member = require("./MemberHandler");
  * The Channel takes care of Member count, etc. by sending and receiving control messages to the server, that stores this state.
  * The Listenable-Mixin is used to trigger on('type', (content, msg) => ...) event handlers for messages that are sent by other clients
  * or for updates to the members of the channel
+ * @mixes Listenable
  * */
 class ChannelHandler extends Listenable(){
 
     constructor(id, client){
         super();
-        this.id = id;
-        this.client = client;
-        this.members = [];
-        this.on(Message.Types.CHANNEL, list => this.members = list.map(m => new Member(m, this.id)));
-        this.on(Message.Types.JOIN, m => this.members.push(new Member(m, this.id)));
-        this.on(Message.Types.LEAVE, m => this.members = this.members.filter(member => member.id !== m));
+        this._id = id;
+        this._client = client;
+        this._members = [];
+        this.on(Message.Types.CHANNEL, list => this._members = list.map(m => new Member(m, this._id)));
+        this.on(Message.Types.JOIN, m => this._members.push(new Member(m, this._id)));
+        this.on(Message.Types.LEAVE, m => this._members = this._members.filter(member => member.id !== m));
+    }
+
+    /**
+     * every member of the given channel
+     * @readonly
+     * @returns {ReadonlyArray} list of MemberHandlers
+     * */
+    get members(){
+        return Object.freeze(this._members);
+    }
+
+    set members(v){
+        throw new TypeError("cannot set property members (readonly)");
+    }
+
+    /**
+     * get this channels id
+     * @readonly
+     * @returns {string} the channel id
+     * */
+    get id(){
+        return this._id;
+    }
+
+    set id(v){
+        throw new TypeError("cannot set property id (readonly)");
+    }
+
+    /**
+     * get the superordinate client handler of this channel
+     * @readonly
+     * @returns {Client} the superordinate client handler
+     * */
+    get client(){
+        return this._client;
+    }
+
+    set client(v){
+        throw new TypeError("cannot set property client (readonly)");
     }
 
     _messagehandler(message) {
-        if(message._receiver === Message.Addresses.ALL){
-            this.members.forEach(member => member._messagehandler(message));
-        }else{
-            const member = this.member(message._receiver);
-            if (member) member._messagehandler(message);
-        }
+        const member = this.member(message.sender);
+        if (member) member._messagehandler(message);
         this.trigger(message.type, [message.content, message]);
     }
 
     /**
      * @param {string} id the id of the member of this channel to search for
-     * @returns Member with the given id or null, if no member with such id is present
+     * @returns {Member} with the given id or null, if no member with such id is present
      * */
     member(id){
-        const i = this.members.findIndex(member => member.id === id);
-        return i >= 0 ? this.members[i] : null;
+        const i = this._members.findIndex(member => member.id === id);
+        return i >= 0 ? this._members[i] : null;
     }
 
     /**
@@ -80,9 +116,9 @@ class ChannelHandler extends Listenable(){
                 content: arguments[1]
             });
         }
-        if(!message.receiver) message = message.withReceiver(Message.ALL);
-        if(!message.channel) message = message.withChannel(this.id);
-        this.client.send(message);
+        if(!message.receiver) message = message.withReceiver(Message.Addresses.ALL);
+        if(!message.channel) message = message.withChannel(this._id);
+        this._client.send(message);
     };
 }
 
@@ -96,13 +132,13 @@ module.exports = ChannelHandler;</code></pre>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-ArrayTools.html">ArrayTools</a></li></ul><h3>Classes</h3><ul><li><a href="Channel.html">Channel</a></li><li><a href="ChannelHandler.html">ChannelHandler</a></li><li><a href="Hub.html">Hub</a></li><li><a href="MemberHandler.html">MemberHandler</a></li><li><a href="Message.html">Message</a></li><li><a href="ServerContext.html">ServerContext</a></li><li><a href="User.html">User</a></li></ul><h3>Mixins</h3><ul><li><a href="Listenable.html">Listenable</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-ArrayTools.html">ArrayTools</a></li></ul><h3>Classes</h3><ul><li><a href="Channel.html">Channel</a></li><li><a href="ChannelHandler.html">ChannelHandler</a></li><li><a href="ClientHandler.html">ClientHandler</a></li><li><a href="Hub.html">Hub</a></li><li><a href="MemberHandler.html">MemberHandler</a></li><li><a href="Message.html">Message</a></li><li><a href="ServerContext.html">ServerContext</a></li><li><a href="User.html">User</a></li></ul><h3>Mixins</h3><ul><li><a href="Listenable.html">Listenable</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Feb 07 2019 16:26:29 GMT+0100 (GMT+01:00)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Feb 17 2019 21:40:30 GMT+0100 (GMT+01:00)
 </footer>
 
 <script> prettyPrint(); </script>
