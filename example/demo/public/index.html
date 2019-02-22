@@ -3,41 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <title>ExampleApp</title>
+    <link rel="stylesheet" type="text/css" href="./style.css">
 </head>
 <body>
-<section>
-    <h1>Login as User</h1>
-    <form id="loginform">
-        <input type="text" name="username" id="username" placeholder="Username">
-        <button type="submit">Use this username</button>
-    </form>
-</section>
-<section>
-    <h1>Create a Channel</h1>
-    <form id="channelform">
-        <input type="text" name="channelname" id="channelname" placeholder="Channelname">
-        <button type="submit">Create this channel</button>
-    </form>
-</section>
-<section>
-    <h1>Join a Channel</h1>
-    <!-- div#channellist availableChannels forEach channel onclick join and redirect to channel -->
-    <div id="channellist">
+    <nav>
+        You are currently logged in as <p id="name-field"></p>
+    </nav>
+    <aside>
+        <section class="top-sidebar" id="joined-section">
+            <h1>
+                Switch between your channels
+            </h1>
+            <ul id="joined">
 
-    </div>
-</section>
-<script>
-    const loginform = document.getElementById("loginform");
-    const channelform = document.getElementById("channelform");
-    const usernamefield = document.getElementById("username");
-    const channelnamefield = document.getElementById("channelname");
-    loginform.onsubmit = function(e){
-        e.preventDefault();
-        fetch('/user',{method: "POST", body: JSON.stringify({name: usernamefield.value}), headers: {"Content-Type": "application/json"},})
-            .then(res => res.json())
-            .then(console.log)
-            .catch(console.error)
-    }
-</script>
+            </ul>
+        </section>
+        <section class="middle-sidebar">
+            <a id="list-toggle">Show available Channels</a>
+        </section>
+        <section class="bottom-sidebar hidden" id="member-section">
+            <h1>
+                Members
+            </h1>
+            <ul id="members"></ul>
+        </section>
+        <section class="bottom-sidebar" id="available-section">
+            <h1>
+                Join available Channels
+            </h1>
+            <ul id="available">
+
+            </ul>
+        </section>
+        <section>
+            <h1>
+                Create Channel
+            </h1>
+            <input type="text" id="new-channel">
+            <button id="create-button">Create</button>
+        </section>
+    </aside>
+    <main id="main">
+        <ul class="messages" id="messages">
+
+        </ul>
+    </main>
+    <script src="main.js"></script>
 </body>
 </html>

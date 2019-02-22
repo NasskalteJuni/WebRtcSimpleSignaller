@@ -5,7 +5,7 @@
   "description": "A simple webrtc signaller, in short webrtcsimplesignaller - wss, that uses a websocket-connection (wss://). Includes Channels",
   "main": "server.js",
   "scripts": {
-    "demo": "node example/app/app.js",
+    "demo": "npm run build && node example/demo/app.js",
     "doc": "./node_modules/.bin/jsdoc ./src -r --destination ./docs --readme ./README.md",
     "test": "jest",
     "build": "node ./build/build.js"

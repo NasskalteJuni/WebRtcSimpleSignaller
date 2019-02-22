@@ -2,9 +2,10 @@
  * Simple Demo - Lacks every check for missing parameters, etc. so DO ONLY USE AS LOCAL EXAMPLE (obviously)
  * */
 const Hub = require("../../src/Server/Hub");
-const Types = require("../../src/Utils/Types");
+const Message = require("../../src/Utils/Message");
+Object.assign(global, Message.Types);
 const server = require("./SimpleServerExample")();  // Very simple test server
-const hub = new Hub({allowChannelManipulationOverSocket: true});
+const hub = new Hub({server: server.http()});
 const rand = () => Math.random().toString(32).substr(2);
 
 // we do not have a database in this example, so everything will be kept simple and in memory
@@ -108,7 +109,7 @@ server.post("/leave", (request, response) => {
     const user = userById(request.json().user);
     const channel = channelById(request.json().channel);
     const isValid = user && channel && user.token && user.token === request.json().token;
-    if(isValid) hub.leave(user.id);
+    if(isValid) hub.leave(user.id, channel.id);
     response.statusCode = isValid ? 200 : 400;
     response.end();
 });
@@ -120,16 +121,17 @@ server.post("/leave", (request, response) => {
 // This can be done by challenging the unauthenticated socket client to send a tuple of user-id and auth-token.
 // auth token can be a session token or something similar, as long as it is hard to guess
 // and unique for this user. (in this example, the token is just a random string patched as token to the user object)
-hub.on(Types.AUTH, ({authenticate, content}) => {
+hub.on(AUTH, ({authenticate, content, failAuthentication}) => {
     // get the user from your application logic by the id that was sent over the socket connection
     const user = userById(content.id);
     // when you got the user and the token matches - authenticate the user
     const isValid = user && user.token === content.token;
     if(isValid) authenticate();
+    else failAuthentication();
 });
 
 
-hub.on(Types.DEAUTH, ({deauthenticate, socket}) => {
+hub.on(DEAUTH, ({deauthenticate, socket}) => {
     // we have nothing to do on deauth.
     // Deauthentication of a socket does not nesessary mean, that the user is logged out,
     // just that its socket connection is invalid or disconnected...
@@ -139,19 +141,19 @@ hub.on(Types.DEAUTH, ({deauthenticate, socket}) => {
 });
 
 // handle user joins over socket (hub-internal)
-hub.on(Types.JOIN, ({join}) => {
+hub.on(JOIN, ({join}) => {
     // you have to call the join function manually, so that you can implement your logic around it
     join();
 });
 
 // handle user leave over socket (hub-internal)
-hub.on(Types.LEAVE, ({leave}) => {
+hub.on(LEAVE, ({leave}) => {
     // you have to call the leave function manually, so that you can implement your logic around it
     leave();
 });
 
 // handle channel creation over socket (hub-internal)
-hub.on(Types.OPEN, ({open}) => {
+hub.on(OPEN, ({open}) => {
     // create for your channel logic
     const channel = {id: rand(), name: content.name, limit: content.limit || 12, creator: user, users: []};
     channels.push(channel);
@@ -160,7 +162,7 @@ hub.on(Types.OPEN, ({open}) => {
 });
 
 // handle channel closing over socket (hub-internal)
-hub.on(Types.CLOSE, ({close, channel}) => {
+hub.on(CLOSE, ({close, channel}) => {
     // remove from your channel logic
     channels = channels.filter(c => c.id === channel.id);
     // inform the hub that the the channel does not exist any more

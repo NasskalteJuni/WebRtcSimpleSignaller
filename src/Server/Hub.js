@@ -13,13 +13,13 @@ class Hub extends Listenable(){
 
     /**
      * Creates a new Hub that controls the server side of our signaller
-     * @param {Object} config - an Object with properties to configure the Hub Server
-     * @param {Server} [server] - a node http server to use. If none is given, a new one will be instantiated
+     * @param {Object} [config] - an Object with properties to configure the Hub Server
+     * @param {Server} [config.server=http.createServer()] - a node http server to use. If none is given, a new one will be instantiated
      * @param {int} [config.port=80] - the port the server will be running on. Defaults to the standard HTTP Port.
      */
-    constructor({port, server}){
+    constructor({port=80, server}={}){
         super();
-        this.socketServer = ws.Server({port, server});
+        this.socketServer = server ? new ws.Server({server}) : new ws.Server({port});
         this.socketServer.on('connection', socket => {
             socket.on('message', message => {
                 message = new Message(Object.assign(JSON.parse(message),{forwarded: new Date()}));
